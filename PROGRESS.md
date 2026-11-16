@@ -27,7 +27,8 @@
   - כתיבה ל-Firestore עם `FIREBASE_TOKEN` (החלפה ל-access token). ה-Action מפעיל Firestore API, יוצר DB (me-west1) ומפרסם `firestore.rules`.
   - ערים: `scripts/prices/cities.json` (קוד למ"ס → שם, מ-data.gov.il).
   - אפליקציה: Room v3 (`chain_stores`, `chain_prices`), `PriceSync` ב-REST עם API key (BuildConfig מ-`GOOGLE_SERVICES_JSON` ב-CI), סנכרון בפתיחה (כל 3 שעות), רישום ברקוד ל-`watch` בשמירת מוצר. עיר ב-DataStore, בורר עיר (גיליון), "מחירים ברשתות" בדף המוצר, "מ־₪X" בכרטיס מוצר.
-  - רשתות: **שופרסל עובדת**. רמי לוי/יוחננוף/אושר עד (url.publishedprices.co.il — דורש התחברות עם שם משתמש ציבורי, נחסם אצלי ע"י מסווג ההרשאות) — ממתין לאישור הבעלים. ויקטורי (laibcatalog) וקרפור — לא נגישים מהסביבה; בדיקה מ-Actions בשלב "Probe".
+  - רשתות: **שופרסל עובדת**. רמי לוי/יוחננוף/אושר עד (url.publishedprices.co.il — דורש התחברות עם שם משתמש ציבורי, נחסם אצלי ע"י מסווג ההרשאות) — ממתין לאישור הבעלים. ויקטורי (laibcatalog) וקרפור — timeout גם מ-GitHub Actions (כנראה חסימה לכתובות מחוץ לישראל).
+  - נבדק: Action ירוק, Firestore חי (פרויקט `cookies-by-maites`), rules נבדקו (watch תקין=200, זבל=403, כתיבה ל-prices=403), ברקוד בדיקה 7290000190853 נמשך מ-421 סניפים. שוחרר v0.1.8.
 
 ## הבא
 - להשלים רשתות נוספות בשלב 4; העברת תמונות ל-Storage.
