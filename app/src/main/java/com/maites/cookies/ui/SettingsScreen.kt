@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.maites.cookies.BuildConfig
 import com.maites.cookies.CookiesApp
+import com.maites.cookies.data.SyncState
 import com.maites.cookies.data.UiPrefs
 import com.maites.cookies.design.Accent
 import com.maites.cookies.design.C
@@ -74,6 +76,10 @@ fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onP
                     Spacer(Modifier.height(Space.s))
                     Text(prefs.accent.label, style = TextStyles.label, color = C.colors.inkDim)
                 }
+            }
+            Column {
+                SectionLabel("גיבוי וסנכרון")
+                AccountCard(app, toast)
             }
             Column {
                 SectionLabel("מחירים")
@@ -206,5 +212,93 @@ private fun ChainsCard(app: CookiesApp, city: String) {
             }, Modifier.fillMaxWidth())
             Spacer(Modifier.height(Space.s))
         }
+    }
+}
+
+/** Google account: optional; when signed in, recipes and products are mirrored to the cloud. */
+@Composable
+private fun AccountCard(app: CookiesApp, toast: (String) -> Unit) {
+    val c = C.colors
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val account by app.prefs.account.collectAsStateWithLifecycle(null)
+    val sync by app.cloud.state.collectAsStateWithLifecycle()
+    val last by app.prefs.lastCloudSync.collectAsStateWithLifecycle(0L)
+    var busy by remember { mutableStateOf(false) }
+    var confirmOut by remember { mutableStateOf(false) }
+
+    CCard {
+        AnimatedContent(account, transitionSpec = { fadeIn(Springs.soft()) togetherWith fadeOut(Springs.soft()) }, label = "acc") { acc ->
+            Column {
+                if (acc == null) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text("☁️", style = TextStyles.title)
+                        Spacer(Modifier.width(Space.m))
+                        Column(Modifier.weight(1f)) {
+                            Text("שמירה בענן", style = TextStyles.heading, color = c.ink)
+                            Text("המתכונים, המוצרים והתמונות נשמרים בחשבון הגוגל ועוברים לכל טלפון שתתחברי ממנו", style = TextStyles.label, color = c.inkDim)
+                        }
+                    }
+                    Spacer(Modifier.height(Space.l))
+                    StickerButton(if (busy) "מתחברת…" else "התחברות עם Google", {
+                        val act = ctx as? android.app.Activity ?: return@StickerButton
+                        if (!busy) scope.launch {
+                            busy = true
+                            runCatching { app.auth.signIn(act) }
+                                .onSuccess { a -> if (a != null) { toast("מחוברת כ${a.name.ifBlank { a.email }}"); app.applicationScope.launch { app.cloud.afterSignIn() } } }
+                                .onFailure { toast(it.message ?: "ההתחברות נכשלה") }
+                            busy = false
+                        }
+                    }, Modifier.fillMaxWidth())
+                } else {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Box(Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).background(c.surface2), contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            Text(acc.name.ifBlank { acc.email }.take(1), style = TextStyles.heading, color = c.ink)
+                            if (acc.photo.isNotBlank()) coil.compose.AsyncImage(acc.photo, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                        }
+                        Spacer(Modifier.width(Space.m))
+                        Column(Modifier.weight(1f)) {
+                            Text(acc.name.ifBlank { "מחוברת" }, style = TextStyles.heading, color = c.ink)
+                            Text(acc.email, style = TextStyles.label, color = c.inkDim)
+                        }
+                    }
+                    Spacer(Modifier.height(Space.m))
+                    val (line, tint) = when (val s = sync) {
+                        SyncState.Running -> "מסנכרנת…" to c.inkDim
+                        is SyncState.Failed -> s.message to c.danger
+                        SyncState.Idle -> (if (last == 0L) "עוד לא סונכרן" else "מסונכרן ✓ · ${ago(last)}") to (if (last == 0L) c.inkDim else c.good)
+                    }
+                    Text(line, style = TextStyles.label, color = tint)
+                    Spacer(Modifier.height(Space.m))
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.m)) {
+                        GhostButton("לסנכרן עכשיו", { app.cloud.syncSoon() }, Modifier.weight(1f))
+                        GhostButton("התנתקות", { confirmOut = true }, Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+
+    com.maites.cookies.design.CSheet(confirmOut, { confirmOut = false }) {
+        Text("להתנתק מהחשבון?", style = TextStyles.title, color = c.ink)
+        Text("הכל נשאר בטלפון ובענן. שינויים מעכשיו לא יגובו עד שתתחברי שוב.", style = TextStyles.body, color = c.inkDim)
+        Spacer(Modifier.height(Space.xl))
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            GhostButton("ביטול", { confirmOut = false }, Modifier.weight(1f))
+            StickerButton("התנתקות", {
+                confirmOut = false
+                scope.launch { app.auth.signOut(ctx); toast("התנתקת") }
+            }, Modifier.weight(1f))
+        }
+    }
+}
+
+private fun ago(t: Long): String {
+    val m = (System.currentTimeMillis() - t) / 60_000
+    return when {
+        m < 1 -> "עכשיו"
+        m < 60 -> "לפני $m דק׳"
+        m < 24 * 60 -> "לפני ${m / 60} שע׳"
+        else -> "לפני ${m / (24 * 60)} ימים"
     }
 }

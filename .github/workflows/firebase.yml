@@ -1,0 +1,48 @@
+name: Firebase setup
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, "ccr-*"]
+    paths: ["firestore.rules", "storage.rules", "firebase.json", "scripts/firebase/**", ".github/workflows/firebase.yml"]
+
+concurrency:
+  group: firebase-setup
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Keystore fingerprints
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KSP: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KA: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          printf '%s' "$KS" | tr -d ' \r\n\t' | base64 -d > "$RUNNER_TEMP/release.jks"
+          L=$(keytool -list -v -keystore "$RUNNER_TEMP/release.jks" -storepass "$KSP" -alias "$KA")
+          echo "SHA1=$(echo "$L" | awk '/SHA1:/{print $2}')" >> "$GITHUB_ENV"
+          echo "SHA256=$(echo "$L" | awk '/SHA256:/{print $2}')" >> "$GITHUB_ENV"
+          rm "$RUNNER_TEMP/release.jks"
+
+      - name: APIs, SHA, Storage bucket, Google provider
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: python3 scripts/firebase/setup.py
+
+      - name: Deploy rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GS: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          npm i -g firebase-tools@13 >/dev/null 2>&1
+          P=$(printf '%s' "$GS" | python3 -c "import json,sys;print(json.load(sys.stdin)['project_info']['project_id'])")
+          firebase deploy --only firestore:rules,storage --project "$P" --non-interactive

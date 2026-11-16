@@ -30,4 +30,9 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        (application as CookiesApp).cloud.syncSoon()
+    }
 }

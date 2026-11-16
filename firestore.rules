@@ -5,6 +5,12 @@ service cloud.firestore {
     match /prices/{barcode} { allow read: if true; }
     match /stores/{chain}   { allow read: if true; }
 
+    // Each user's own recipes and products (cloud sync).
+    match /users/{uid}/{kind}/{gid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid
+        && kind in ['products', 'recipes'];
+    }
+
     // Barcodes the app wants prices for. Anyone may add one; nobody reads it from a client.
     match /watch/{barcode} {
       allow create, update: if barcode.matches('^[1-9][0-9]{5,13}$')

@@ -3,7 +3,6 @@ package com.maites.cookies.data
 import android.content.Context
 import androidx.room.Dao
 import androidx.room.Database
-import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.Insert
@@ -12,6 +11,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +23,7 @@ enum class ProductCategory(val label: String, val emoji: String) {
     Baking("אפייה", "🌾"), Dairy("חלב וביצים", "🥚"), Chocolate("שוקולד", "🍫"), Pantry("מזווה", "🫙"),
 }
 
-@Entity(tableName = "products", indices = [Index("barcode")])
+@Entity(tableName = "products", indices = [Index("barcode"), Index("gid", unique = true)])
 data class ProductEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
@@ -37,7 +37,27 @@ data class ProductEntity(
     val brand: String = "",
     val category: ProductCategory = ProductCategory.Pantry,
     val imageUrl: String? = null,
+    /** Cloud id (stable across devices). */
+    val gid: String = java.util.UUID.randomUUID().toString(),
+    /** Changed locally since the last cloud push. */
+    val dirty: Boolean = true,
 )
+
+/** A deleted row the cloud still has to hear about. [kind] = cloud collection. */
+@Entity(tableName = "tombstones")
+data class Tombstone(@PrimaryKey val gid: String, val kind: String)
+
+@Dao
+interface SyncDao {
+    @Query("SELECT (SELECT COUNT(*) FROM products WHERE dirty = 1) + (SELECT COUNT(*) FROM recipes WHERE dirty = 1) + (SELECT COUNT(*) FROM tombstones)")
+    fun pending(): Flow<Int>
+    @Query("SELECT * FROM tombstones") suspend fun tombstones(): List<Tombstone>
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun tomb(t: Tombstone)
+    @Query("DELETE FROM tombstones WHERE gid = :gid") suspend fun untomb(gid: String)
+    @Query("DELETE FROM tombstones") suspend fun clearTombstones()
+    @Query("UPDATE products SET dirty = 1") suspend fun dirtyProducts()
+    @Query("UPDATE recipes SET dirty = 1") suspend fun dirtyRecipes()
+}
 
 @Dao
 interface ProductDao {
@@ -50,20 +70,31 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE barcode = :code LIMIT 1")
     suspend fun byBarcode(code: String): ProductEntity?
 
+    /** Raw write (cloud pulls). UI code uses [upsert]. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(p: ProductEntity): Long
+    suspend fun put(p: ProductEntity): Long
 
-    @Query("UPDATE products SET favorite = :fav WHERE id = :id")
-    suspend fun setFavorite(id: Long, fav: Boolean)
+    @Transaction
+    suspend fun upsert(p: ProductEntity): Long = put(p.copy(dirty = true))
 
-    @Query("UPDATE products SET priceAgorot = :agorot, updatedAt = :at WHERE id = :id")
+    @Query("UPDATE products SET favorite = :fav, dirty = 1, updatedAt = :at WHERE id = :id")
+    suspend fun setFavorite(id: Long, fav: Boolean, at: Long = System.currentTimeMillis())
+
+    @Query("UPDATE products SET priceAgorot = :agorot, dirty = 1, updatedAt = :at WHERE id = :id")
     suspend fun setPrice(id: Long, agorot: Long?, at: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM products WHERE gid = :gid") suspend fun byGid(gid: String): ProductEntity?
+    @Query("SELECT * FROM products WHERE id = :id") suspend fun once(id: Long): ProductEntity?
+    @Query("SELECT * FROM products WHERE dirty = 1") suspend fun dirty(): List<ProductEntity>
+    @Query("UPDATE products SET dirty = 0 WHERE id = :id AND updatedAt = :at") suspend fun markClean(id: Long, at: Long)
+    @Query("DELETE FROM products WHERE id = :id") suspend fun deleteRow(id: Long)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun tomb(t: Tombstone)
 
     @Query("SELECT barcode FROM products WHERE barcode IS NOT NULL")
     suspend fun barcodes(): List<String>
 
-    @Delete
-    suspend fun delete(p: ProductEntity)
+    @Transaction
+    suspend fun delete(p: ProductEntity) { deleteRow(p.id); tomb(Tombstone(p.gid, "products")) }
 }
 
 private val M1_2 = object : Migration(1, 2) {
@@ -105,16 +136,29 @@ private val M5_6 = object : Migration(5, 6) {
     }
 }
 
-@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class], version = 6, exportSchema = false)
+private val M6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        for (t in listOf("products", "recipes")) {
+            db.execSQL("ALTER TABLE $t ADD COLUMN gid TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE $t ADD COLUMN dirty INTEGER NOT NULL DEFAULT 1")
+            db.execSQL("UPDATE $t SET gid = lower(hex(randomblob(16)))")
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_${t}_gid ON $t(gid)")
+        }
+        db.execSQL("CREATE TABLE IF NOT EXISTS tombstones (gid TEXT NOT NULL, kind TEXT NOT NULL, PRIMARY KEY(gid))")
+    }
+}
+
+@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class], version = 7, exportSchema = false)
 @androidx.room.TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun products(): ProductDao
     abstract fun prices(): PriceDao
     abstract fun recipes(): RecipeDao
     abstract fun catalog(): CatalogDao
+    abstract fun sync(): SyncDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6).build()
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7).build()
     }
 }
 

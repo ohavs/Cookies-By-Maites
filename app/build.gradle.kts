@@ -21,6 +21,9 @@ android {
         // Public Firebase identifiers (from google-services.json in CI) for Firestore REST reads.
         buildConfigField("String", "FIREBASE_PROJECT", "\"${System.getenv("FIREBASE_PROJECT") ?: ""}\"")
         buildConfigField("String", "FIREBASE_API_KEY", "\"${System.getenv("FIREBASE_API_KEY") ?: ""}\"")
+        // Google sign-in (OAuth web client of the Firebase project) + Storage bucket, fetched in CI.
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${System.getenv("GOOGLE_WEB_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "STORAGE_BUCKET", "\"${System.getenv("STORAGE_BUCKET") ?: ""}\"")
     }
 
     signingConfigs {
@@ -73,6 +76,10 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     implementation("androidx.room:room-runtime:2.7.1")
     implementation("androidx.room:room-ktx:2.7.1")

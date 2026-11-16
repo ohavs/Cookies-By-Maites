@@ -38,6 +38,12 @@ jobs:
           print('FIREBASE_PROJECT='+d['project_info']['project_id'])
           print('FIREBASE_API_KEY='+d['client'][0]['api_key'][0]['current_key'])" >> "$GITHUB_ENV"
 
+      - name: Sign-in + Storage config
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: python3 scripts/firebase/setup.py --read-only
+
       - name: Decode keystore
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

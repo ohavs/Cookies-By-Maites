@@ -26,7 +26,7 @@ enum class RecipeCategory(val label: String, val emoji: String) {
 }
 
 /** [photos]: local file paths, "\n"-separated; the first is the main photo. [yieldCount]: units the recipe makes. */
-@Entity(tableName = "recipes")
+@Entity(tableName = "recipes", indices = [Index("gid", unique = true)])
 data class RecipeEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
@@ -43,6 +43,8 @@ data class RecipeEntity(
     val salePrice: Long = 0,
     /** Target margin in percent (of the sale price). 0 = not set. */
     val targetMargin: Int = 0,
+    val gid: String = UUID.randomUUID().toString(),
+    val dirty: Boolean = true,
 ) {
     val photoList get() = photos.split('\n').filter { it.isNotBlank() }
     val extraList get() = ExtraCost.decode(extras)
@@ -127,21 +129,41 @@ interface RecipeDao {
 
     @Query("SELECT * FROM recipes WHERE id = :id") fun byId(id: Long): Flow<RecipeEntity?>
     @Query("SELECT * FROM ingredients WHERE recipeId = :id ORDER BY position") fun ingredients(id: Long): Flow<List<IngredientEntity>>
-    @Query("UPDATE recipes SET favorite = :fav WHERE id = :id") suspend fun setFavorite(id: Long, fav: Boolean)
+    @Query("SELECT * FROM ingredients WHERE recipeId = :id ORDER BY position") suspend fun ingredientsOnce(id: Long): List<IngredientEntity>
+    @Query("UPDATE recipes SET favorite = :fav, dirty = 1, updatedAt = :at WHERE id = :id") suspend fun setFavorite(id: Long, fav: Boolean, at: Long = System.currentTimeMillis())
     @Query("SELECT COUNT(*) FROM ingredients WHERE productId = :productId") suspend fun usesOfProduct(productId: Long): Int
-    @Query("UPDATE ingredients SET productId = NULL WHERE productId = :productId") suspend fun unlinkProduct(productId: Long)
+    @Query("UPDATE recipes SET dirty = 1, updatedAt = :at WHERE id IN (SELECT recipeId FROM ingredients WHERE productId = :productId)")
+    suspend fun touchUsers(productId: Long, at: Long = System.currentTimeMillis())
+    @Query("UPDATE ingredients SET productId = NULL WHERE productId = :productId") suspend fun clearProduct(productId: Long)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(r: RecipeEntity): Long
+    /** Product deleted: its recipe lines keep their names but lose the link. */
+    @Transaction suspend fun unlinkProduct(productId: Long) { touchUsers(productId); clearProduct(productId) }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun put(r: RecipeEntity): Long
     @Insert suspend fun insertIngredients(i: List<IngredientEntity>)
     @Query("DELETE FROM ingredients WHERE recipeId = :id") suspend fun clearIngredients(id: Long)
-    @Query("DELETE FROM recipes WHERE id = :id") suspend fun delete(id: Long)
-    @Query("UPDATE recipes SET extras = :extras, salePrice = :sale, targetMargin = :margin WHERE id = :id")
-    suspend fun setCosting(id: Long, extras: String, sale: Long, margin: Int)
+    @Query("DELETE FROM recipes WHERE id = :id") suspend fun deleteRow(id: Long)
+    @Query("SELECT gid FROM recipes WHERE id = :id") suspend fun gidOf(id: Long): String?
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun tomb(t: Tombstone)
+    @Query("UPDATE recipes SET extras = :extras, salePrice = :sale, targetMargin = :margin, dirty = 1, updatedAt = :at WHERE id = :id")
+    suspend fun setCosting(id: Long, extras: String, sale: Long, margin: Int, at: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM recipes WHERE gid = :gid") suspend fun byGid(gid: String): RecipeEntity?
+    @Query("SELECT * FROM recipes WHERE dirty = 1") suspend fun dirty(): List<RecipeEntity>
+    @Query("SELECT * FROM recipes") suspend fun all(): List<RecipeEntity>
+    @Query("UPDATE recipes SET dirty = 0 WHERE id = :id AND updatedAt = :at") suspend fun markClean(id: Long, at: Long)
+
+    @Transaction
+    suspend fun delete(id: Long) { gidOf(id)?.let { tomb(Tombstone(it, "recipes")) }; deleteRow(id) }
 
     /** Saves the recipe and replaces its ingredient list. Returns the recipe id. */
     @Transaction
-    suspend fun save(r: RecipeEntity, items: List<IngredientEntity>): Long {
-        val id = if (r.id == 0L) upsert(r) else { upsert(r); r.id }
+    suspend fun save(r: RecipeEntity, items: List<IngredientEntity>): Long = write(r.copy(dirty = true), items)
+
+    /** Like [save] without marking the recipe for upload (cloud pulls). */
+    @Transaction
+    suspend fun write(r: RecipeEntity, items: List<IngredientEntity>): Long {
+        val id = if (r.id == 0L) put(r) else { put(r); r.id }
         clearIngredients(id)
         insertIngredients(items.mapIndexed { i, it -> it.copy(id = 0, recipeId = id, position = i) })
         return id
@@ -172,6 +194,8 @@ object RecipePhotos {
             f.absolutePath
         }.getOrNull()
     }
+
+    fun file(ctx: Context, name: String) = File(dir(ctx), name)
 
     /** Deletes photo files no recipe references any more. */
     fun prune(ctx: Context, keep: Set<String>) {

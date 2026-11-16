@@ -10,6 +10,13 @@ class CookiesApp : Application() {
     val db by lazy { AppDb.create(this) }
     val priceSync by lazy { PriceSync(db, prefs, com.maites.cookies.data.LocalChains(this)) }
     val catalog by lazy { com.maites.cookies.data.CatalogSync(db, prefs) }
+    val auth by lazy { com.maites.cookies.data.CloudAuth(prefs) }
+    val cloud by lazy { com.maites.cookies.data.CloudSync(this, db, prefs, auth, applicationScope) }
     /** Outlives screens — for fire-and-forget network calls. */
     val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
+
+    override fun onCreate() {
+        super.onCreate()
+        cloud.start()
+    }
 }
