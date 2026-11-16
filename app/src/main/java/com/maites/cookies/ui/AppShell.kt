@@ -214,35 +214,15 @@ enum class AddWhat { Recipe, Product, Scan }
 @Composable
 private fun AddSheet(open: Boolean, onDismiss: () -> Unit, onPick: (AddWhat) -> Unit) {
     val c = C.colors
-    BackHandler(open, onDismiss)
-    Box(Modifier.fillMaxSize()) {
-        AnimatedVisibility(open, enter = fadeIn(Springs.soft()), exit = fadeOut(Springs.soft())) {
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.38f))
-                .clickable(remember { MutableInteractionSource() }, null, onClick = onDismiss))
+    com.maites.cookies.design.CSheet(open, onDismiss) {
+        Text("מה מוסיפים?", style = TextStyles.title, color = c.ink)
+        Spacer(Modifier.height(Space.l))
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.m)) {
+            AddOption("🍪", "מתכון", c.tPeach, Modifier.weight(1f)) { onPick(AddWhat.Recipe) }
+            AddOption("🧈", "מוצר", c.tButter, Modifier.weight(1f)) { onPick(AddWhat.Product) }
+            AddOption("📷", "סריקה", c.tSky, Modifier.weight(1f)) { onPick(AddWhat.Scan) }
         }
-        AnimatedVisibility(
-            open,
-            enter = slideInVertically(Springs.soft()) { it },
-            exit = slideOutVertically(Springs.soft()) { it },
-            modifier = Modifier.align(Alignment.BottomCenter),
-        ) {
-            Column(
-                Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet))
-                    .background(c.bg).navigationBarsPadding().padding(Space.gutter),
-            ) {
-                Box(Modifier.align(Alignment.CenterHorizontally).size(40.dp, 5.dp).clip(CircleShape).background(c.surface3))
-                Spacer(Modifier.height(Space.l))
-                Text("מה מוסיפים?", style = TextStyles.title, color = c.ink)
-                Spacer(Modifier.height(Space.l))
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.m)) {
-                    AddOption("🍪", "מתכון", c.tPeach, Modifier.weight(1f)) { onPick(AddWhat.Recipe) }
-                    AddOption("🧈", "מוצר", c.tButter, Modifier.weight(1f)) { onPick(AddWhat.Product) }
-                    AddOption("📷", "סריקה", c.tSky, Modifier.weight(1f)) { onPick(AddWhat.Scan) }
-                }
-                Spacer(Modifier.height(Space.s))
-            }
-        }
+        Spacer(Modifier.height(Space.s))
     }
 }
 

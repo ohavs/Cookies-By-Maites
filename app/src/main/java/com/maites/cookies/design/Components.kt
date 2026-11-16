@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -40,19 +42,46 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInParent
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Scale-on-press with the pop spring. Returns modifier + interaction source to share with clickable. */
+/** Scale-on-press on the touch spring + a light haptic on every tap. */
 @Composable
-fun Modifier.pressable(onClick: () -> Unit, enabled: Boolean = true): Modifier {
+fun Modifier.pressable(onClick: () -> Unit, enabled: Boolean = true, scale: Float = 0.94f, haptic: Boolean = true): Modifier {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
-    val scale by animateFloatAsState(if (pressed) 0.96f else 1f, Springs.pop(), label = "press")
+    val s by animateFloatAsState(if (pressed) scale else 1f, Springs.pop(), label = "press")
+    val haptics = C.haptics
     return this
-        .graphicsLayer { scaleX = scale; scaleY = scale }
-        .clickable(interactionSource = src, indication = null, enabled = enabled, onClick = onClick)
+        .graphicsLayer { scaleX = s; scaleY = s }
+        .clickable(interactionSource = src, indication = null, enabled = enabled) {
+            if (haptic) haptics.light()
+            onClick()
+        }
+}
+
+/**
+ * FLIP for rows in a plain Column: when a keyed row is placed somewhere new (a reorder), it glides
+ * from where it was shown instead of jumping. [store] is shared by the rows of one column.
+ */
+@Composable
+fun Modifier.flip(key: Any, store: MutableMap<Any, Float>): Modifier {
+    val off = remember { androidx.compose.animation.core.Animatable(0f) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    return this
+        .onPlaced { co ->
+            val y = co.positionInParent().y
+            val old = store.put(key, y)
+            if (old != null && old != y) scope.launch {
+                off.snapTo(off.value + old - y)
+                off.animateTo(0f, Springs.soft())
+            }
+        }
+        .graphicsLayer { translationY = off.value }
 }
 
 @Composable
@@ -82,6 +111,7 @@ fun StickerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     val drop by animateDpAsState(if (pressed) 0.dp else 4.dp, Springs.pop(), label = "drop")
+    val haptics = C.haptics
     val shape = RoundedCornerShape(Radius.button)
     Box(
         modifier
@@ -94,7 +124,7 @@ fun StickerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
             .clip(shape)
             .background(if (enabled) c.accent else c.surface3)
             .border(2.dp, c.stroke, shape)
-            .clickable(interactionSource = src, indication = null, enabled = enabled, onClick = onClick)
+            .clickable(interactionSource = src, indication = null, enabled = enabled) { haptics.light(); onClick() }
             .padding(horizontal = 22.dp, vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -115,21 +145,33 @@ fun GhostButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier
     ) { Text(text, style = TextStyles.label, color = c.ink) }
 }
 
+/** Segmented control: a surface pill slides under the selected option on the glide spring. */
 @Composable
 fun <T> Segmented(options: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
     val c = C.colors
-    Row(
-        modifier.clip(RoundedCornerShape(16.dp)).background(c.surface2).padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        options.forEach { o ->
-            val on = o == selected
-            val bg by androidx.compose.animation.animateColorAsState(if (on) c.surface else Color.Transparent, Springs.soft(), label = "seg")
+    val idx = options.indexOf(selected).coerceAtLeast(0)
+    val pos by animateFloatAsState(idx.toFloat(), Springs.soft(), label = "seg")
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier.clip(RoundedCornerShape(16.dp)).background(c.surface2).padding(4.dp)) {
+        val gap = 4.dp
+        val w = (maxWidth - gap * (options.size - 1)) / options.size
+        Box(
+            Modifier.matchParentSize(),
+        ) {
             Box(
-                Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(bg)
-                    .pressable({ onSelect(o) }).padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(label(o), style = TextStyles.label, color = if (on) c.ink else c.inkDim) }
+                Modifier.offset(x = (w + gap) * pos).width(w).fillMaxHeight()
+                    .clip(RoundedCornerShape(12.dp)).background(c.surface),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+            options.forEachIndexed { i, o ->
+                val on = i == idx
+                val fg by androidx.compose.animation.animateColorAsState(if (on) c.ink else c.inkDim, Springs.soft(), label = "segfg")
+                Box(
+                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                        .pressable({ if (!on) onSelect(o) }, scale = 0.97f).padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) { Text(label(o), style = TextStyles.label, color = fg) }
+            }
         }
     }
 }

@@ -1,14 +1,23 @@
 package com.maites.cookies.design
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -150,33 +159,73 @@ fun Pill(text: String, tint: Color = C.colors.surface2, fg: Color = C.colors.ink
     }
 }
 
-/** Bottom sheet with scrim and grabber. Rendered as an overlay on top of whatever hosts it. */
+/**
+ * Bottom sheet with scrim and grabber, on the glide spring. Drag it down anywhere (or fling) to
+ * dismiss; a list inside scrolls first and hands the leftover pull to the sheet.
+ */
 @Composable
 fun CSheet(open: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     val c = C.colors
+    val haptics = C.haptics
+    val scope = rememberCoroutineScope()
+    val dismiss by rememberUpdatedState(onDismiss)
+    val p = remember { Animatable(0f) }
+    var h by remember { mutableFloatStateOf(1f) }
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(open) {
+        if (open) { shown = true; haptics.light() }
+        p.animateTo(if (open) 1f else 0f, Springs.soft(0.001f))
+        if (!open) shown = false
+    }
     BackHandler(open, onDismiss)
-    Box(Modifier.fillMaxSize()) {
-        AnimatedVisibility(open, enter = fadeIn(Springs.soft()), exit = fadeOut(Springs.soft())) {
-            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.38f))
-                .clickable(remember { MutableInteractionSource() }, null, onClick = onDismiss))
+    if (!open && !shown) return
+
+    fun dragBy(dy: Float) {
+        scope.launch {
+            var v = p.value - dy / h
+            if (v > 1f) v = 1f + (v - 1f) * 0.15f
+            p.snapTo(v)
         }
-        AnimatedVisibility(
-            open,
-            enter = slideInVertically(Springs.soft()) { it },
-            exit = slideOutVertically(Springs.soft()) { it },
-            modifier = Modifier.align(Alignment.BottomCenter),
+    }
+    fun settle(vel: Float) {
+        if (vel > 1400f || p.value < 0.6f) { haptics.light(); dismiss() }
+        else scope.launch { p.animateTo(1f, Springs.soft(0.001f), initialVelocity = -vel / h) }
+    }
+    val nested = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset =
+                if (available.y < 0f && p.value < 1f && source == NestedScrollSource.UserInput) { dragBy(available.y); Offset(0f, available.y) }
+                else Offset.Zero
+
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset =
+                if (available.y > 0f && source == NestedScrollSource.UserInput) { dragBy(available.y); Offset(0f, available.y) }
+                else Offset.Zero
+
+            override suspend fun onPreFling(available: Velocity): Velocity =
+                if (p.value < 1f) { settle(available.y); available } else Velocity.Zero
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier.fillMaxSize().graphicsLayer { alpha = p.value.coerceIn(0f, 1f) }
+                .background(Color.Black.copy(alpha = 0.38f))
+                .pointerInput(Unit) { detectTapGestures { if (open) dismiss() } },
+        )
+        Column(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                .onSizeChanged { h = it.height.toFloat().coerceAtLeast(1f) }
+                .graphicsLayer { translationY = (1f - p.value) * (h + 30.dp.toPx()) }
+                .nestedScroll(nested)
+                .draggable(rememberDraggableState { dragBy(it) }, Orientation.Vertical, onDragStopped = { settle(it) })
+                .clip(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet))
+                .background(c.bg)
+                .clickable(remember { MutableInteractionSource() }, null) {}
+                .navigationBarsPadding().imePadding().padding(Space.gutter),
         ) {
-            Column(
-                Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet))
-                    .background(c.bg)
-                    .clickable(remember { MutableInteractionSource() }, null) {}
-                    .navigationBarsPadding().imePadding().padding(Space.gutter),
-            ) {
-                Box(Modifier.align(Alignment.CenterHorizontally).size(40.dp, 5.dp).clip(CircleShape).background(c.surface3))
-                Spacer(Modifier.height(Space.l))
-                content()
-            }
+            Box(Modifier.align(Alignment.CenterHorizontally).size(40.dp, 5.dp).clip(CircleShape).background(c.surface3))
+            Spacer(Modifier.height(Space.l))
+            content()
         }
     }
 }
@@ -201,6 +250,7 @@ fun KeypadSheet(
     var text by remember(open, initial) { mutableStateOf(initial?.let { fromHundredths(it, decimals) } ?: "") }
     val shake = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    val haptics = C.haptics
     CSheet(open, onDismiss) {
         Text(title, style = TextStyles.title, color = c.ink)
         Text(lead, style = TextStyles.body, color = c.inkDim)
@@ -222,7 +272,7 @@ fun KeypadSheet(
                             Box(
                                 Modifier.weight(1f).height(56.dp).clip(RoundedCornerShape(16.dp))
                                     .background(if (k.isEmpty()) Color.Transparent else c.surface)
-                                    .pressable({ text = press(text, k, decimals) }, enabled = k.isNotEmpty()),
+                                    .pressable({ haptics.tick(); text = press(text, k, decimals) }, enabled = k.isNotEmpty(), haptic = false),
                                 contentAlignment = Alignment.Center,
                             ) { Text(k, style = TextStyles.title, color = c.ink, textAlign = TextAlign.Center) }
                         }
@@ -234,6 +284,7 @@ fun KeypadSheet(
         StickerButton("שמירה", {
             val v = toHundredths(text, decimals)
             if (v == null || v <= 0) scope.launch {
+                haptics.reject()
                 for (x in listOf(10f, -10f, 6f, 0f)) shake.animateTo(x, Springs.pop())
             } else onDone(v)
         }, Modifier.fillMaxWidth())

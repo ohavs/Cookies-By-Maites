@@ -1,6 +1,5 @@
 package com.maites.cookies.design
 
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -90,8 +89,14 @@ object Space {
     val gutter = 20.dp
 }
 
-/** The only two springs in the app: soft for pages/sheets, bouncy for presses/pops. */
+/**
+ * The only two springs in the app — noted's physics (mass 1):
+ *  - soft = glide: k=230, c=30 → ζ≈0.99; pages, sheets, layout, colours.
+ *  - pop = touch: k=520, c=25 → ζ≈0.55; presses, toggles, things under the finger.
+ */
 object Springs {
-    fun <T> soft() = spring<T>(dampingRatio = 0.9f, stiffness = 380f)
-    fun <T> pop() = spring<T>(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+    val glideDamping = 30f / (2f * kotlin.math.sqrt(230f))
+    val touchDamping = 25f / (2f * kotlin.math.sqrt(520f))
+    fun <T> soft(visibilityThreshold: T? = null) = spring(dampingRatio = glideDamping, stiffness = 230f, visibilityThreshold = visibilityThreshold)
+    fun <T> pop(visibilityThreshold: T? = null) = spring(dampingRatio = touchDamping, stiffness = 520f, visibilityThreshold = visibilityThreshold)
 }

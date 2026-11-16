@@ -139,7 +139,7 @@ fun ProductsScreen(app: CookiesApp, onAdd: () -> Unit, onOpen: (Long) -> Unit) {
                         Text("${items.size} מוצרים", style = TextStyles.label, color = c.inkDim)
                     }
                 }
-                items(items, key = { it.id }) { p -> ProductTile(p, priceKey(p.barcode)?.let(cheapMap::get)) { onOpen(p.id) } }
+                items(items, key = { it.id }) { p -> Box(Modifier.animateItem(placementSpec = com.maites.cookies.design.Springs.soft(androidx.compose.ui.unit.IntOffset.VisibilityThreshold))) { ProductTile(p, priceKey(p.barcode)?.let(cheapMap::get)) { onOpen(p.id) } } }
             }
         }
     }

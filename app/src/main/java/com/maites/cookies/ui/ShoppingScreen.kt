@@ -55,6 +55,8 @@ import com.maites.cookies.design.SectionLabel
 import com.maites.cookies.design.Segmented
 import com.maites.cookies.design.Space
 import com.maites.cookies.design.Springs
+import com.maites.cookies.design.flip
+import androidx.compose.ui.graphics.graphicsLayer
 import com.maites.cookies.design.StickerButton
 import com.maites.cookies.design.TextStyles
 import com.maites.cookies.design.pressable
@@ -119,12 +121,17 @@ fun ShoppingScreen(app: CookiesApp, onAdd: () -> Unit, onClear: () -> Unit, onPi
                 Segmented(listOf(true, false), byPacks, { if (it) "לפי אריזות" else "כמות מדויקת" }, { v -> scope.launch { app.prefs.setShopPacks(v) } }, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Space.m))
                 val order = lines.indices.sortedBy { lines[it].key in checked }
-                CCard(Modifier.fillMaxWidth().animateContentSize(), padding = PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
+                val placed = remember { mutableMapOf<Any, Float>() }
+                CCard(Modifier.fillMaxWidth().animateContentSize(Springs.soft()), padding = PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
                     order.forEachIndexed { n, i ->
-                        if (n > 0) Divider()
                         val l = lines[i]
-                        val on = l.key in checked
-                        LineRow(l, costs[i], byPacks, on) { scope.launch { if (on) shop.uncheck(l.key) else shop.check(ShopCheck(l.key)) } }
+                        androidx.compose.runtime.key(l.key) {
+                            Column(Modifier.flip(l.key, placed)) {
+                                if (n > 0) Divider()
+                                val on = l.key in checked
+                                LineRow(l, costs[i], byPacks, on) { scope.launch { if (on) shop.uncheck(l.key) else shop.check(ShopCheck(l.key)) } }
+                            }
+                        }
                     }
                     Divider()
                     Row(Modifier.fillMaxWidth().padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
@@ -195,9 +202,11 @@ private fun EntryRow(
 private fun LineRow(l: ShopLine, cost: Long?, byPacks: Boolean, checked: Boolean, onToggle: () -> Unit) {
     val c = C.colors
     val fill by animateColorAsState(if (checked) c.accent else Color.Transparent, Springs.soft(), label = "chk")
-    Row(Modifier.fillMaxWidth().pressable(onToggle).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
+    val tick by androidx.compose.animation.core.animateFloatAsState(if (checked) 1f else 0f, Springs.pop(), label = "tick")
+    val haptics = C.haptics
+    Row(Modifier.fillMaxWidth().pressable({ haptics.toggle(!checked); onToggle() }, scale = 0.97f, haptic = false).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(26.dp).clip(CircleShape).background(fill).border(2.dp, if (checked) c.stroke else c.inkFaint, CircleShape), contentAlignment = Alignment.Center) {
-            if (checked) Text("✓", style = TextStyles.label, color = c.accentFg)
+            Text("✓", style = TextStyles.label, color = c.accentFg, modifier = Modifier.graphicsLayer { scaleX = tick; scaleY = tick; alpha = tick.coerceIn(0f, 1f) })
         }
         Spacer(Modifier.width(Space.m))
         Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(l.product?.let { categoryTint(it.category) } ?: c.surface2), contentAlignment = Alignment.Center) {
