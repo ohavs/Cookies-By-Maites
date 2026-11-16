@@ -74,6 +74,8 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
     val c = C.colors
     var tab by rememberSaveable { mutableStateOf(Tab.Recipes) }
     var addOpen by remember { mutableStateOf(false) }
+    var cityOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { app.priceSync.sync() }
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2200); toast = null } }
     val showToast: (String) -> Unit = { toast = it }
@@ -95,7 +97,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
                 Tab.Recipes -> RecipesScreen { addOpen = true }
                 Tab.Products -> ProductsScreen(app, onAdd = { push(EditPg()) }, onOpen = { push(ProductPg(it)) })
                 Tab.Shopping -> ShoppingScreen()
-                Tab.Settings -> SettingsScreen(app, prefs, showToast)
+                Tab.Settings -> SettingsScreen(app, prefs, showToast, onPickCity = { cityOpen = true })
             }
         }
 
@@ -103,7 +105,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
 
         PageHost(stack, pop) { pg ->
             when (pg) {
-                is ProductPg -> ProductPage(app, pg.id, onBack = pop, onEdit = { push(EditPg(pg.id)) }, toast = showToast)
+                is ProductPg -> ProductPage(app, pg.id, onBack = pop, onEdit = { push(EditPg(pg.id)) }, onPickCity = { cityOpen = true }, toast = showToast)
                 is EditPg -> ProductEditor(
                     app, pg.id, pg.barcode, onClose = pop,
                     onSaved = { id -> if (pg.id == null) replaceTop(ProductPg(id)) else pop() },
@@ -112,6 +114,8 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
                 )
             }
         }
+
+        CityPickerSheet(app, cityOpen, { cityOpen = false }, showToast)
 
         Toast(toast, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 104.dp))
 

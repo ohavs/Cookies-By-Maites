@@ -59,6 +59,9 @@ interface ProductDao {
     @Query("UPDATE products SET priceAgorot = :agorot, updatedAt = :at WHERE id = :id")
     suspend fun setPrice(id: Long, agorot: Long?, at: Long = System.currentTimeMillis())
 
+    @Query("SELECT barcode FROM products WHERE barcode IS NOT NULL")
+    suspend fun barcodes(): List<String>
+
     @Delete
     suspend fun delete(p: ProductEntity)
 }
@@ -72,13 +75,21 @@ private val M1_2 = object : Migration(1, 2) {
     }
 }
 
-@Database(entities = [ProductEntity::class], version = 2, exportSchema = false)
+private val M2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS chain_stores (chain TEXT NOT NULL, storeId TEXT NOT NULL, name TEXT NOT NULL, city TEXT NOT NULL, address TEXT NOT NULL, PRIMARY KEY(chain, storeId))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS chain_prices (barcode TEXT NOT NULL, chain TEXT NOT NULL, storeId TEXT NOT NULL, agorot INTEGER NOT NULL, PRIMARY KEY(barcode, chain, storeId))")
+    }
+}
+
+@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class], version = 3, exportSchema = false)
 @androidx.room.TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun products(): ProductDao
+    abstract fun prices(): PriceDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2).build()
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3).build()
     }
 }
 

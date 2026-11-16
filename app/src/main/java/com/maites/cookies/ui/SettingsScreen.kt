@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,7 +51,7 @@ import com.maites.cookies.update.Updater
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit) {
+fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onPickCity: () -> Unit) {
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 120.dp)) {
         ScreenTitle("הגדרות")
@@ -71,6 +72,15 @@ fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit) {
                     }
                     Spacer(Modifier.height(Space.s))
                     Text(prefs.accent.label, style = TextStyles.label, color = C.colors.inkDim)
+                }
+            }
+            Column {
+                SectionLabel("מחירים")
+                val city by app.prefs.city.collectAsStateWithLifecycle("")
+                CCard(padding = androidx.compose.foundation.layout.PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
+                    SettingRow("עיר", city.ifBlank { "עוד לא נבחרה" }, onPickCity) {
+                        Text("📍", style = TextStyles.heading)
+                    }
                 }
             }
             Column {

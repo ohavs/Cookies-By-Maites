@@ -59,7 +59,7 @@ fun RoundButton(glyph: String, onClick: () -> Unit, modifier: Modifier = Modifie
 }
 
 @Composable
-fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit, toast: (String) -> Unit) {
+fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit, onPickCity: () -> Unit, toast: (String) -> Unit) {
     val c = C.colors
     val dao = app.db.products()
     val p by remember(id) { dao.byId(id) }.collectAsStateWithLifecycle(null)
@@ -116,6 +116,9 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                         }
                     }
                 }
+
+                Spacer(Modifier.height(Space.xl))
+                ChainPricesSection(app, prod, onPickCity)
 
                 Spacer(Modifier.height(Space.xl))
                 GhostButton("מחיקת המוצר", { confirmDelete = true }, Modifier.fillMaxWidth())

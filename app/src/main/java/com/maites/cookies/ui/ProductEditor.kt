@@ -183,6 +183,7 @@ fun ProductEditor(
                             packAmount = pack ?: 0.0, priceAgorot = price, imageUrl = image, updatedAt = System.currentTimeMillis(),
                         )
                         val newId = dao.upsert(saved)
+                        if (clean != null && clean != original?.barcode) app.applicationScope.launch { app.priceSync.watchNow(clean) }
                         toast(if (id == null) "${saved.name} נוסף" else "נשמר")
                         onSaved(if (id == null) newId else id)
                     }

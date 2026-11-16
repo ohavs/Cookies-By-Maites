@@ -1,5 +1,7 @@
 package com.maites.cookies.ui
 
+import com.maites.cookies.data.priceKey
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -83,6 +85,9 @@ private const val ALL = "all"
 fun ProductsScreen(app: CookiesApp, onAdd: () -> Unit, onOpen: (Long) -> Unit) {
     val c = C.colors
     val products by app.db.products().all().collectAsStateWithLifecycle(null)
+    val city by app.prefs.city.collectAsStateWithLifecycle("")
+    val cheapest by remember(city) { app.db.prices().cheapestInCity(city) }.collectAsStateWithLifecycle(emptyList())
+    val cheapMap = remember(cheapest) { cheapest.associate { it.barcode to it.agorot } }
     var q by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf(ALL) }
     val list = products ?: return
@@ -134,14 +139,14 @@ fun ProductsScreen(app: CookiesApp, onAdd: () -> Unit, onOpen: (Long) -> Unit) {
                         Text("${items.size} מוצרים", style = TextStyles.label, color = c.inkDim)
                     }
                 }
-                items(items, key = { it.id }) { p -> ProductTile(p) { onOpen(p.id) } }
+                items(items, key = { it.id }) { p -> ProductTile(p, priceKey(p.barcode)?.let(cheapMap::get)) { onOpen(p.id) } }
             }
         }
     }
 }
 
 @Composable
-private fun ProductTile(p: ProductEntity, onClick: () -> Unit) {
+private fun ProductTile(p: ProductEntity, chainPrice: Long?, onClick: () -> Unit) {
     val c = C.colors
     CCard(onClick = onClick, padding = PaddingValues(Space.m)) {
         Box {
@@ -157,6 +162,10 @@ private fun ProductTile(p: ProductEntity, onClick: () -> Unit) {
         Text(formatPack(p.packAmount, p.unit) + if (p.brand.isNotBlank()) " · ${p.brand}" else "", style = TextStyles.label, color = c.inkDim, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(Space.xs))
         if (p.priceAgorot != null) Text(formatShekel(p.priceAgorot), style = TextStyles.heading, color = c.ink)
+        else if (chainPrice != null) Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("מ־", style = TextStyles.label, color = c.inkDim)
+            Text(formatShekel(chainPrice), style = TextStyles.heading, color = c.good)
+        }
         else Text("אין מחיר עדיין", style = TextStyles.label, color = c.inkFaint)
     }
 }

@@ -18,6 +18,9 @@ android {
         versionCode = buildNumber
         versionName = "0.1.$buildNumber"
         buildConfigField("String", "UPDATE_REPO", "\"ohavs/cookies-by-maites\"")
+        // Public Firebase identifiers (from google-services.json in CI) for Firestore REST reads.
+        buildConfigField("String", "FIREBASE_PROJECT", "\"${System.getenv("FIREBASE_PROJECT") ?: ""}\"")
+        buildConfigField("String", "FIREBASE_API_KEY", "\"${System.getenv("FIREBASE_API_KEY") ?: ""}\"")
     }
 
     signingConfigs {
