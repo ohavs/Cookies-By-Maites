@@ -19,6 +19,8 @@
 - שלב 2 — שלד Kotlin נבנה ומתקמפל ב-CI (`.github/workflows/android.yml`): מעטפת + סרגל תחתון עם `+`, טוקנים מהאב-טיפוס (Rubik, 4 accent, בהיר/כהה), Room (products), DataStore, "בדוק עדכונים" (GitHub latest release → הורדה → התקנה, כולל הרשאת מקורות לא ידועים).
 - גרסאות: tag `v0.1.<run_number>`, versionCode = run_number. אין main — ה-CI רץ על `ccr-*` ו-main. לינק קבוע: https://github.com/ohavs/cookies-by-maites/releases/latest/download/cookies-by-maites.apk
 
+- שלב 3 — מוצרים (v0.1.5): רשימה בגריד לפי קטגוריה + חיפוש (שם/מותג/ברקוד) + צ'יפים (הכל/מועדפים/קטגוריות), דף מוצר (מועדף, מחיר ידני במקלדת משלנו, מחיר ל־100 גרם, עריכה, מחיקה עם אישור), עורך מוצר, סריקה (ML Kit code scanner, בלי הרשאת מצלמה) + מילוי אוטומטי מ-Open Food Facts. דפים נדחפים עם החלקה מהקצה (`ui/PageHost.kt`). Room v2 עם מיגרציה.
+- תמונות מוצר כרגע: URL ישיר של OFF דרך Coil (מטמון דיסק). ההעברה ל-Storage/webp — בשלב 4 יחד עם ה-Action.
+
 ## הבא
-- Release ראשון v0.1.4 חי (APK חתום, נבדק שיורד). ממתין לבדיקה על המכשיר.
-- שלב 3: מוצרים.
+- שלב 4: משיכת מחירים (Action יומי → Firestore), בחירת עיר, מסך השוואה בדף המוצר; העברת תמונות ל-Storage.
