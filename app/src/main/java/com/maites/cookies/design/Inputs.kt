@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -78,6 +79,24 @@ fun CTextField(
                 )
             }
             if (trailing != null) trailing()
+        }
+    }
+}
+
+/** Multi-line text field (notes), same look as [CTextField]. */
+@Composable
+fun CTextArea(value: String, onChange: (String) -> Unit, label: String, modifier: Modifier = Modifier, placeholder: String = "") {
+    val c = C.colors
+    Column(modifier) {
+        SectionLabel(label)
+        Box(Modifier.fillMaxWidth().heightIn(min = 120.dp).clip(RoundedCornerShape(16.dp)).background(c.surface).padding(Space.l)) {
+            if (value.isEmpty()) Text(placeholder, style = TextStyles.body, color = c.inkFaint)
+            BasicTextField(
+                value, onChange,
+                textStyle = TextStyles.body.copy(color = c.ink, textDirection = TextDirection.Content),
+                cursorBrush = SolidColor(c.accent),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

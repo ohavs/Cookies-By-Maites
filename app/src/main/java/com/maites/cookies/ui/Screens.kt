@@ -31,18 +31,6 @@ fun ScreenTitle(title: String, sub: String? = null) {
 }
 
 @Composable
-fun RecipesScreen(onAdd: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        ScreenTitle("מתכונים")
-        Box(Modifier.weight(1f).padding(bottom = 96.dp), contentAlignment = Alignment.Center) {
-            EmptyState("🍪", "עוד אין מתכונים", "המתכון הראשון שלך יופיע כאן, עם תמחיר לכל עוגייה.", C.colors.tPeach) {
-                StickerButton("מתכון חדש", onAdd)
-            }
-        }
-    }
-}
-
-@Composable
 fun ShoppingScreen() {
     Column(Modifier.fillMaxSize()) {
         ScreenTitle("קניות")

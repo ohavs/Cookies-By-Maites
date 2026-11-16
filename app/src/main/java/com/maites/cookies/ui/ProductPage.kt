@@ -144,7 +144,7 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                 StickerButton("מחיקה", {
                     confirmDelete = false
                     onBack()
-                    scope.launch { dao.delete(prod) }
+                    scope.launch { app.db.recipes().unlinkProduct(prod.id); dao.delete(prod) }
                     toast("${prod.name} נמחק")
                 }, Modifier.weight(1f))
             }

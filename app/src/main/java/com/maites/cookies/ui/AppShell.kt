@@ -64,6 +64,8 @@ import kotlinx.coroutines.launch
 sealed interface Page
 class ProductPg(val id: Long) : Page
 class EditPg(val id: Long? = null, val barcode: String? = null) : Page
+class RecipePg(val id: Long) : Page
+class RecipeEditPg(val id: Long? = null) : Page
 
 enum class Tab(val label: String, val emoji: String) {
     Recipes("מתכונים", "🍪"), Products("מוצרים", "🧈"), Shopping("קניות", "🛒"), Settings("הגדרות", "⚙️")
@@ -94,7 +96,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
             label = "tab",
         ) { t ->
             when (t) {
-                Tab.Recipes -> RecipesScreen { addOpen = true }
+                Tab.Recipes -> RecipesScreen(app, onAdd = { push(RecipeEditPg()) }, onOpen = { push(RecipePg(it)) })
                 Tab.Products -> ProductsScreen(app, onAdd = { push(EditPg()) }, onOpen = { push(ProductPg(it)) })
                 Tab.Shopping -> ShoppingScreen()
                 Tab.Settings -> SettingsScreen(app, prefs, showToast, onPickCity = { cityOpen = true })
@@ -112,6 +114,12 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
                     onExisting = { id -> replaceTop(ProductPg(id)) },
                     toast = showToast,
                 )
+                is RecipePg -> RecipePage(app, pg.id, onBack = pop, onEdit = { push(RecipeEditPg(pg.id)) }, onProduct = { push(ProductPg(it)) }, toast = showToast)
+                is RecipeEditPg -> RecipeEditor(
+                    app, pg.id, onClose = pop,
+                    onSaved = { id -> if (pg.id == null) replaceTop(RecipePg(id)) else pop() },
+                    toast = showToast,
+                )
             }
         }
 
@@ -122,7 +130,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
         AddSheet(open = addOpen, onDismiss = { addOpen = false }) { what ->
             addOpen = false
             when (what) {
-                AddWhat.Recipe -> showToast("עורך המתכונים — בשלב 5")
+                AddWhat.Recipe -> { tab = Tab.Recipes; push(RecipeEditPg()) }
                 AddWhat.Product -> { tab = Tab.Products; push(EditPg()) }
                 AddWhat.Scan -> scope.launch {
                     when (val r = scanBarcode(ctx)) {

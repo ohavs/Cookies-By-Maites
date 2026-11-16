@@ -82,14 +82,24 @@ private val M2_3 = object : Migration(2, 3) {
     }
 }
 
-@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class], version = 3, exportSchema = false)
+private val M3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS recipes (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL, category TEXT NOT NULL, yieldCount INTEGER NOT NULL, yieldLabel TEXT NOT NULL, notes TEXT NOT NULL, photos TEXT NOT NULL, favorite INTEGER NOT NULL, updatedAt INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS ingredients (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, recipeId INTEGER NOT NULL, position INTEGER NOT NULL, productId INTEGER, name TEXT NOT NULL, amount REAL NOT NULL, unit TEXT NOT NULL, icon TEXT NOT NULL, FOREIGN KEY(recipeId) REFERENCES recipes(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_ingredients_recipeId ON ingredients(recipeId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_ingredients_productId ON ingredients(productId)")
+    }
+}
+
+@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class], version = 4, exportSchema = false)
 @androidx.room.TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun products(): ProductDao
     abstract fun prices(): PriceDao
+    abstract fun recipes(): RecipeDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3).build()
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4).build()
     }
 }
 
@@ -98,4 +108,6 @@ class Converters {
     @androidx.room.TypeConverter fun toUnit(s: String) = BaseUnit.valueOf(s)
     @androidx.room.TypeConverter fun fromCat(c: ProductCategory) = c.name
     @androidx.room.TypeConverter fun toCat(s: String) = runCatching { ProductCategory.valueOf(s) }.getOrDefault(ProductCategory.Pantry)
+    @androidx.room.TypeConverter fun fromRCat(c: RecipeCategory) = c.name
+    @androidx.room.TypeConverter fun toRCat(s: String) = runCatching { RecipeCategory.valueOf(s) }.getOrDefault(RecipeCategory.Other)
 }
