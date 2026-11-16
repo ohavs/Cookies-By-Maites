@@ -79,6 +79,8 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
     var tab by rememberSaveable { mutableStateOf(Tab.Recipes) }
     var addOpen by remember { mutableStateOf(false) }
     var cityOpen by remember { mutableStateOf(false) }
+    var shopAdd by remember { mutableStateOf(false) }
+    var shopClear by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { app.applicationScope.launch { app.catalog.sync() }; app.priceSync.sync() }
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2200); toast = null } }
@@ -100,7 +102,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
             when (t) {
                 Tab.Recipes -> RecipesScreen(app, onAdd = { push(RecipeEditPg()) }, onOpen = { push(RecipePg(it)) })
                 Tab.Products -> ProductsScreen(app, onAdd = { push(EditPg()) }, onOpen = { push(ProductPg(it)) })
-                Tab.Shopping -> ShoppingScreen()
+                Tab.Shopping -> ShoppingScreen(app, onAdd = { shopAdd = true }, onClear = { shopClear = true }, onPickCity = { cityOpen = true }, onRecipe = { push(RecipePg(it)) }, onProduct = { push(ProductPg(it)) }, toast = showToast)
                 Tab.Settings -> SettingsScreen(app, prefs, showToast, onPickCity = { cityOpen = true })
             }
         }
@@ -126,6 +128,8 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
             }
         }
 
+        ShopAddSheet(app, shopAdd, { shopAdd = false }, showToast)
+        ShopClearSheet(app, shopClear, { shopClear = false }, showToast)
         CityPickerSheet(app, cityOpen, { cityOpen = false }, showToast)
 
         Toast(toast, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 104.dp))

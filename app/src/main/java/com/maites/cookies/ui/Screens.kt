@@ -29,14 +29,3 @@ fun ScreenTitle(title: String, sub: String? = null) {
         if (sub != null) Text(sub, style = TextStyles.body, color = C.colors.inkDim)
     }
 }
-
-@Composable
-fun ShoppingScreen() {
-    Column(Modifier.fillMaxSize()) {
-        ScreenTitle("קניות")
-        Box(Modifier.weight(1f).padding(bottom = 96.dp), contentAlignment = Alignment.Center) {
-            EmptyState("🛒", "הרשימה ריקה", "בוחרים מתכונים, והרשימה והסופר הזול לסל נבנים לבד.", C.colors.tMint)
-        }
-    }
-}
-

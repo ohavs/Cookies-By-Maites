@@ -113,6 +113,11 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
                     Spacer(Modifier.height(Space.xl))
                     SectionLabel("תמחיר")
                     CostSummary(r, Costing.of(cost.sum, r.extraList, r.yieldCount, mult), cost.missing, onCosting)
+                    Spacer(Modifier.height(Space.m))
+                    StickerButton("🛒 לרשימת הקניות", {
+                        app.applicationScope.launch { app.db.shop().addRecipe(r.id, mult) }
+                        toast("${r.name} נוסף לקניות")
+                    }, Modifier.fillMaxWidth())
                 }
 
                 if (r.notes.isNotBlank()) {

@@ -53,6 +53,11 @@ class Prefs(private val ctx: Context) {
     suspend fun localState(): LocalState = localState.first()
     suspend fun setLocalState(s: LocalState) = ctx.store.edit { it[kLocalAt] = s.at; it[kLocalCity] = s.city; it[kLocalStatus] = s.status }
 
+    private val kShopPacks = androidx.datastore.preferences.core.booleanPreferencesKey("shop_packs")
+    /** Shopping list: round up to whole packs (true) or exact amounts. */
+    val shopPacks: Flow<Boolean> = ctx.store.data.map { it[kShopPacks] ?: true }
+    suspend fun setShopPacks(v: Boolean) = ctx.store.edit { it[kShopPacks] = v }
+
     suspend fun setMode(m: ThemeMode) = ctx.store.edit { it[kMode] = m.name }
     suspend fun setAccent(a: Accent) = ctx.store.edit { it[kAccent] = a.name }
 

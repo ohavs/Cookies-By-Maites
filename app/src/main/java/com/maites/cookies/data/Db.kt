@@ -151,7 +151,14 @@ private val M6_7 = object : Migration(6, 7) {
     }
 }
 
-@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class], version = 7, exportSchema = false)
+private val M7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS shop_entries (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, recipeId INTEGER, productId INTEGER, qty REAL NOT NULL, addedAt INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS shop_checks (`key` TEXT NOT NULL, PRIMARY KEY(`key`))")
+    }
+}
+
+@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class, ShopEntry::class, ShopCheck::class], version = 8, exportSchema = false)
 @androidx.room.TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun products(): ProductDao
@@ -159,9 +166,10 @@ abstract class AppDb : RoomDatabase() {
     abstract fun recipes(): RecipeDao
     abstract fun catalog(): CatalogDao
     abstract fun sync(): SyncDao
+    abstract fun shop(): ShopDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7).build()
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8).build()
     }
 }
 

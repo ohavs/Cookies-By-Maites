@@ -79,6 +79,10 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                     scope.launch { dao.setFavorite(prod.id, !prod.favorite) }
                     toast(if (prod.favorite) "הוסר מהמועדפים" else "נשמר במועדפים")
                 }, Modifier.graphicsLayer { val s = 1f + 0.12f * favPop * (1f - favPop) * 4f; scaleX = s; scaleY = s })
+                RoundButton("🛒", {
+                app.applicationScope.launch { app.db.shop().addProduct(prod.id) }
+                toast("${prod.name} נוסף לקניות")
+            })
                 RoundButton("✏️", onEdit)
             }
             ProductImage(prod, Modifier.padding(horizontal = Space.gutter).fillMaxWidth().height(240.dp), corner = 28.dp, iconSize = 120.dp)
