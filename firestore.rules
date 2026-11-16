@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Daily chain prices, written only by the GitHub Action (admin token).
+    match /prices/{barcode} { allow read: if true; }
+    match /stores/{chain}   { allow read: if true; }
+
+    // Barcodes the app wants prices for. Anyone may add one; nobody reads it from a client.
+    match /watch/{barcode} {
+      allow create, update: if barcode.matches('^[1-9][0-9]{5,13}$')
+        && request.resource.data.keys().hasOnly(['at'])
+        && request.resource.data.at is int;
+    }
+  }
+}

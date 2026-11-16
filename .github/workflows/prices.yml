@@ -1,0 +1,57 @@
+name: Daily prices
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main, "ccr-*"]
+    paths: ["scripts/prices/**", "firestore.rules", ".github/workflows/prices.yml"]
+
+concurrency:
+  group: prices
+  cancel-in-progress: false
+
+jobs:
+  prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Firebase project
+        env:
+          GS: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          P=$(printf '%s' "$GS" | python -c "import json,sys;print(json.load(sys.stdin)['project_info']['project_id'])")
+          echo "FIREBASE_PROJECT=$P" >> "$GITHUB_ENV"
+
+      - name: Firestore database + rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          npm i -g firebase-tools@13 >/dev/null 2>&1
+          if ! firebase firestore:databases:list --project "$FIREBASE_PROJECT" --non-interactive | grep -q "(default)"; then
+            firebase firestore:databases:create "(default)" --location me-west1 --project "$FIREBASE_PROJECT" --non-interactive
+          fi
+          firebase deploy --only firestore:rules --project "$FIREBASE_PROJECT" --non-interactive
+
+      - name: Probe other chains
+        continue-on-error: true
+        run: |
+          for u in https://url.publishedprices.co.il/login https://prices.carrefour.co.il/ https://laibcatalog.co.il/; do
+            echo "$u -> $(curl -s -o /dev/null -w '%{http_code}' -m 30 "$u")"
+          done
+
+      - name: Fetch prices
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: python scripts/prices/fetch.py
