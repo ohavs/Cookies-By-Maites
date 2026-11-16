@@ -10,6 +10,7 @@ Env:
   DRY_RUN=1          print instead of writing
 """
 import gzip
+import http.cookiejar
 import io
 import json
 import os
@@ -88,7 +89,77 @@ class Shufersal:
         return [u for _, u in latest.values()]
 
 
-CHAINS = [Shufersal()]
+class PublishedPrices:
+    """url.publishedprices.co.il (Cerberus): public username, empty password."""
+    base = "https://url.publishedprices.co.il"
+
+    def __init__(self, key, name, user):
+        self.key, self.name, self.user = key, name, user
+        self.op = None
+
+    def _open(self, url, data=None, timeout=60):
+        req = urllib.request.Request(url, headers=UA, data=urllib.parse.urlencode(data).encode() if data else None)
+        with self.op.open(req, timeout=timeout) as r:
+            return r.read()
+
+    def _csrf(self, html):
+        return re.search(rb'name="csrftoken" content="([^"]+)"', html).group(1).decode()
+
+    def _login(self):
+        if self.op:
+            return
+        self.op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        tok = self._csrf(self._open(f"{self.base}/login"))
+        self._open(f"{self.base}/login/user", {"username": self.user, "password": "", "Submit": "Sign in", "csrftoken": tok})
+        self.tok = self._csrf(self._open(f"{self.base}/file"))
+
+    def _list(self, prefix):
+        self._login()
+        d = json.loads(self._open(f"{self.base}/file/json/dir", {
+            "sEcho": "1", "iDisplayStart": "0", "iDisplayLength": "100000",
+            "sSearch": prefix, "cd": "/", "csrftoken": self.tok}))
+        return [x["name"] for x in d.get("aaData", []) if x["name"].startswith(prefix)]
+
+    def get(self, name, timeout=120, tries=3):
+        for i in range(tries):
+            try:
+                return self._open(f"{self.base}/file/d/{urllib.parse.quote(name)}", timeout=timeout)
+            except Exception:
+                if i == tries - 1:
+                    raise
+                time.sleep(2 * (i + 1))
+
+    def stores(self):
+        names = sorted(n for n in self._list("Stores") if re.search(r"\d{8}", n))
+        b = maybe_gunzip(self.get(names[-1]))
+        if b[:2] in (b"\xff\xfe", b"\xfe\xff"):
+            b = b.decode("utf-16").encode()
+        root = ET.fromstring(b.decode("utf-8-sig").encode())
+        res = {}
+        for s in root.iter():
+            if s.tag.lower() == "store":
+                sid = text(s, "StoreID") or text(s, "StoreId")
+                if sid.isdigit():
+                    res[str(int(sid))] = {"n": text(s, "StoreName"), "c": city_name(text(s, "City")), "a": text(s, "Address")}
+        return res
+
+    def price_files(self):
+        latest = {}
+        for n in self._list("PriceFull"):
+            m = re.search(r"PriceFull\d+-(\d+)-(\d+)-(\d{8}-?\d+)", n)
+            if m:
+                k = int(m.group(2))
+                if k not in latest or m.group(3) > latest[k][0]:
+                    latest[k] = (m.group(3), n)
+        return [n for _, n in latest.values()]
+
+
+CHAINS = [
+    Shufersal(),
+    PublishedPrices("ramilevy", "רמי לוי", "RamiLevi"),
+    PublishedPrices("yochananof", "יוחננוף", "yohananof"),
+    PublishedPrices("osherad", "אושר עד", "osherad"),
+]
 
 
 def parse_prices(blob, watched):
@@ -117,7 +188,7 @@ def fetch_chain(chain, watched):
 
     def one(u):
         try:
-            return parse_prices(get(u, timeout=120), watched)
+            return parse_prices((chain.get if hasattr(chain, "get") else get)(u, timeout=120), watched)
         except Exception as e:
             print(f"[{chain.key}] skip {u[:90]}: {e}", flush=True)
             return None, {}
