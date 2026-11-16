@@ -57,7 +57,7 @@ fun chainTint(chain: String): Color = with(C.colors) {
 
 /** "מחירים ברשתות" block on the product page: stores in the chosen city, cheapest first. */
 @Composable
-fun ChainPricesSection(app: CookiesApp, prod: ProductEntity, onPickCity: () -> Unit) {
+fun ChainPricesSection(app: CookiesApp, prod: ProductEntity, onPickCity: () -> Unit, onLink: () -> Unit) {
     val c = C.colors
     val code = priceKey(prod.barcode)
     val city by app.prefs.city.collectAsStateWithLifecycle("")
@@ -75,12 +75,15 @@ fun ChainPricesSection(app: CookiesApp, prod: ProductEntity, onPickCity: () -> U
     }
     CCard(Modifier.animateContentSize(), padding = PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
         when {
-            code == null -> Note("🏷️", "אין ברקוד למוצר", "עם ברקוד נמשוך מחירים מהרשתות פעם ביום. אפשר להוסיף אותו בעריכה.")
+            code == null -> {
+                Note("🔗", "עוד לא מחובר למחירים", "מוצאים את המוצר במחירון של הרשתות — בלי ברקוד ובלי סריקה.")
+                StickerButton("חיפוש במחירון", onLink, Modifier.fillMaxWidth().padding(bottom = Space.m))
+            }
             city.isBlank() -> {
                 Note("📍", "באיזו עיר קונים?", "נציג את הסניפים בעיר מהזול ליקר.")
                 StickerButton("בחירת עיר", onPickCity, Modifier.fillMaxWidth().padding(bottom = Space.m))
             }
-            rows.isEmpty() && anywhere == 0 -> Note("🌙", "המחירים בדרך", "המשיכה מהרשתות רצה פעם ביום, מחר בבוקר המחירים יופיעו כאן.")
+            rows.isEmpty() && anywhere == 0 -> Note("🌙", "המחירים בדרך", "ויקטורי וקרפור מתעדכנות עכשיו; שאר הרשתות — מחר בבוקר.")
             rows.isEmpty() -> Note("🔍", "אין מחיר ב$city", "המוצר לא נמצא בסניפים בעיר הזו. אפשר לבחור עיר אחרת.")
             else -> {
                 val shown = if (expanded) rows else rows.take(5)

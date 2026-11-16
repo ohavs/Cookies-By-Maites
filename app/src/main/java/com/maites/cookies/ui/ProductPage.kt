@@ -66,6 +66,7 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
     val scope = rememberCoroutineScope()
     var keypad by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var catalogOpen by remember { mutableStateOf(false) }
     val prod = p ?: return
     val favPop by animateFloatAsState(if (prod.favorite) 1f else 0f, Springs.pop(), label = "fav")
 
@@ -118,7 +119,7 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                 }
 
                 Spacer(Modifier.height(Space.xl))
-                ChainPricesSection(app, prod, onPickCity)
+                ChainPricesSection(app, prod, onPickCity, onLink = { catalogOpen = true })
 
                 Spacer(Modifier.height(Space.xl))
                 GhostButton("מחיקת המוצר", { confirmDelete = true }, Modifier.fillMaxWidth())
@@ -133,6 +134,23 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
             keypad = false
             scope.launch { dao.setPrice(prod.id, v) }
             toast("המחיר נשמר")
+        }
+
+        CatalogSheet(app, catalogOpen, prod.name, { catalogOpen = false }) { item ->
+            catalogOpen = false
+            scope.launch {
+                val other = dao.byBarcode(item.code)
+                if (other != null && other.id != prod.id) { toast("המוצר הזה כבר ברשימה: ${other.name}"); return@launch }
+                val unit = item.baseUnit
+                dao.upsert(prod.copy(
+                    barcode = item.code, brand = prod.brand.ifBlank { item.brand },
+                    packAmount = if (prod.packAmount <= 0 && unit != null && item.amount > 0) item.amount else prod.packAmount,
+                    unit = if (prod.packAmount <= 0 && unit != null && item.amount > 0) unit else prod.unit,
+                    updatedAt = System.currentTimeMillis(),
+                ))
+                toast("חובר: ${item.name}")
+                app.applicationScope.launch { app.priceSync.watchNow(item.code); app.priceSync.sync(force = true) }
+            }
         }
 
         CSheet(confirmDelete, { confirmDelete = false }) {

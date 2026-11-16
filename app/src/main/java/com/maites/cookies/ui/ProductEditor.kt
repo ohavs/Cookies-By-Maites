@@ -83,6 +83,7 @@ fun ProductEditor(
     var image by remember { mutableStateOf<String?>(null) }
     var looking by remember { mutableStateOf(false) }
     var pad by remember { mutableStateOf(Pad.None) }
+    var catalogOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(id) {
         if (id != null) dao.byId(id).first()?.let { p ->
@@ -146,6 +147,19 @@ fun ProductEditor(
                 if (looking) { Text("מחפשים את המוצר…", style = TextStyles.label, color = c.accentInk); Spacer(Modifier.height(Space.s)) }
 
                 CTextField(name, { name = it }, "שם המוצר", placeholder = "למשל: חמאה")
+                if (code.isBlank()) {
+                    Spacer(Modifier.height(Space.s))
+                    CCard(Modifier.fillMaxWidth(), onClick = { catalogOpen = true }) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(c.tMint), contentAlignment = Alignment.Center) { Text("🔗", style = TextStyles.heading) }
+                            Spacer(Modifier.size(Space.m))
+                            Column {
+                                Text("חיבור למחירי הרשתות", style = TextStyles.heading, color = c.ink)
+                                Text("מוצאים את המוצר במחירון לפי שם", style = TextStyles.label, color = c.inkDim)
+                            }
+                        }
+                    }
+                }
                 Spacer(Modifier.height(Space.l))
                 CTextField(brand, { brand = it }, "מותג", placeholder = "לא חובה")
                 Spacer(Modifier.height(Space.l))
@@ -183,11 +197,25 @@ fun ProductEditor(
                             packAmount = pack ?: 0.0, priceAgorot = price, imageUrl = image, updatedAt = System.currentTimeMillis(),
                         )
                         val newId = dao.upsert(saved)
-                        if (clean != null && clean != original?.barcode) app.applicationScope.launch { app.priceSync.watchNow(clean) }
+                        if (clean != null && clean != original?.barcode) app.applicationScope.launch { app.priceSync.watchNow(clean); app.priceSync.sync(force = true) }
                         toast(if (id == null) "${saved.name} נוסף" else "נשמר")
                         onSaved(if (id == null) newId else id)
                     }
                 }, Modifier.fillMaxWidth(), enabled = valid)
+            }
+        }
+
+        CatalogSheet(app, catalogOpen, listOf(brand, name).filter { it.isNotBlank() }.joinToString(" ").ifBlank { name }, { catalogOpen = false }) { item ->
+            catalogOpen = false
+            scope.launch {
+                val other = dao.byBarcode(item.code)
+                if (other != null && other.id != id) { toast("המוצר כבר ברשימה"); onExisting(other.id); return@launch }
+                code = item.code
+                if (name.isBlank()) name = item.name
+                if (brand.isBlank()) brand = item.brand
+                val u = item.baseUnit
+                if (pack == null && u != null && item.amount > 0) { pack = item.amount; unit = u }
+                toast("חובר: ${item.name}")
             }
         }
 

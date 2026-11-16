@@ -79,7 +79,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
     var tab by rememberSaveable { mutableStateOf(Tab.Recipes) }
     var addOpen by remember { mutableStateOf(false) }
     var cityOpen by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { app.priceSync.sync() }
+    LaunchedEffect(Unit) { app.applicationScope.launch { app.catalog.sync() }; app.priceSync.sync() }
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2200); toast = null } }
     val showToast: (String) -> Unit = { toast = it }

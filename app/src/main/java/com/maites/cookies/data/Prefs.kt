@@ -37,6 +37,9 @@ class Prefs(private val ctx: Context) {
     suspend fun setCity(c: String) = ctx.store.edit { it[kCity] = c }
     suspend fun lastPriceSync(): Long = ctx.store.data.first()[kSync] ?: 0L
     suspend fun setLastPriceSync(t: Long) = ctx.store.edit { it[kSync] = t }
+    private val kCatalog = longPreferencesKey("catalog_sync")
+    suspend fun lastCatalog(): Long = ctx.store.data.first()[kCatalog] ?: 0L
+    suspend fun setLastCatalog(t: Long) = ctx.store.edit { it[kCatalog] = t }
 
     private val kLocalAt = longPreferencesKey("local_sync")
     private val kLocalCity = stringPreferencesKey("local_city")
