@@ -22,5 +22,12 @@
 - שלב 3 — מוצרים (v0.1.5): רשימה בגריד לפי קטגוריה + חיפוש (שם/מותג/ברקוד) + צ'יפים (הכל/מועדפים/קטגוריות), דף מוצר (מועדף, מחיר ידני במקלדת משלנו, מחיר ל־100 גרם, עריכה, מחיקה עם אישור), עורך מוצר, סריקה (ML Kit code scanner, בלי הרשאת מצלמה) + מילוי אוטומטי מ-Open Food Facts. דפים נדחפים עם החלקה מהקצה (`ui/PageHost.kt`). Room v2 עם מיגרציה.
 - תמונות מוצר כרגע: URL ישיר של OFF דרך Coil (מטמון דיסק). ההעברה ל-Storage/webp — בשלב 4 יחד עם ה-Action.
 
+- שלב 4 (בתהליך) — מחירים:
+  - `scripts/prices/fetch.py` (stdlib) + `.github/workflows/prices.yml` יומי 03:17 UTC: קורא `watch/*` מ-Firestore, מוריד PriceFull של כל הסניפים, כותב `prices/{barcode}` {name, at, p:{chain_store: agorot}} ו-`stores/{chain}` {name, s:{id:{n,c,a}}}. רשת שנכשלה שומרת מחירי אתמול. ברקוד = בלי אפסים מובילים.
+  - כתיבה ל-Firestore עם `FIREBASE_TOKEN` (החלפה ל-access token). ה-Action מפעיל Firestore API, יוצר DB (me-west1) ומפרסם `firestore.rules`.
+  - ערים: `scripts/prices/cities.json` (קוד למ"ס → שם, מ-data.gov.il).
+  - אפליקציה: Room v3 (`chain_stores`, `chain_prices`), `PriceSync` ב-REST עם API key (BuildConfig מ-`GOOGLE_SERVICES_JSON` ב-CI), סנכרון בפתיחה (כל 3 שעות), רישום ברקוד ל-`watch` בשמירת מוצר. עיר ב-DataStore, בורר עיר (גיליון), "מחירים ברשתות" בדף המוצר, "מ־₪X" בכרטיס מוצר.
+  - רשתות: **שופרסל עובדת**. רמי לוי/יוחננוף/אושר עד (url.publishedprices.co.il — דורש התחברות עם שם משתמש ציבורי, נחסם אצלי ע"י מסווג ההרשאות) — ממתין לאישור הבעלים. ויקטורי (laibcatalog) וקרפור — לא נגישים מהסביבה; בדיקה מ-Actions בשלב "Probe".
+
 ## הבא
-- שלב 4: משיכת מחירים (Action יומי → Firestore), בחירת עיר, מסך השוואה בדף המוצר; העברת תמונות ל-Storage.
+- להשלים רשתות נוספות בשלב 4; העברת תמונות ל-Storage.
