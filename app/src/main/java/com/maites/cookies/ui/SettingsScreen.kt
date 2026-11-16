@@ -81,6 +81,8 @@ fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onP
                     SettingRow("עיר", city.ifBlank { "עוד לא נבחרה" }, onPickCity) {
                         Text("📍", style = TextStyles.heading)
                     }
+                    val local by app.prefs.localState.collectAsStateWithLifecycle(com.maites.cookies.data.LocalState(0, "", ""))
+                    SettingRow("ויקטורי · קרפור", localSummary(local))
                 }
             }
             Column {
@@ -159,4 +161,16 @@ private fun UpdateCard(toast: (String) -> Unit) {
             }
         }
     }
+}
+
+/** Victory/Carrefour are read by the phone itself — show how the last read went. */
+private fun localSummary(s: com.maites.cookies.data.LocalState): String {
+    if (s.at == 0L) return "נקראים ישירות מהטלפון · עוד לא עודכנו"
+    val parts = s.status.split(';').filter { it.isNotBlank() }.map { row ->
+        val f = row.split(':')
+        val name = com.maites.cookies.data.Chain.of(f[0])?.label ?: f[0]
+        if (f.getOrNull(1) == "ok") "$name ✓ ${f.getOrNull(3) ?: 0} מחירים" else "$name — לא זמין"
+    }
+    val t = java.text.SimpleDateFormat("d.M HH:mm", java.util.Locale.getDefault()).format(java.util.Date(s.at))
+    return parts.joinToString(" · ") + " · $t"
 }

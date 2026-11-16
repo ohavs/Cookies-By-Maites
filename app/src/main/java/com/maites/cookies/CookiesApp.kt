@@ -8,7 +8,7 @@ import com.maites.cookies.data.PriceSync
 class CookiesApp : Application() {
     val prefs by lazy { Prefs(this) }
     val db by lazy { AppDb.create(this) }
-    val priceSync by lazy { PriceSync(db, prefs) }
+    val priceSync by lazy { PriceSync(db, prefs, com.maites.cookies.data.LocalChains(this)) }
     /** Outlives screens — for fire-and-forget network calls. */
     val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
 }

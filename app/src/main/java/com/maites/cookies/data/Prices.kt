@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import com.maites.cookies.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -62,13 +63,20 @@ interface PriceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun putStores(s: List<ChainStore>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun putPrices(p: List<ChainPrice>)
     @Query("DELETE FROM chain_stores WHERE chain = :chain") suspend fun clearStores(chain: String)
-    @Query("DELETE FROM chain_prices WHERE barcode IN (:barcodes)") suspend fun clearPrices(barcodes: List<String>)
+    @Query("DELETE FROM chain_prices WHERE barcode IN (:barcodes) AND chain NOT IN (:keep)") suspend fun clearPrices(barcodes: List<String>, keep: List<String>)
+    @Query("DELETE FROM chain_prices WHERE chain = :chain") suspend fun clearChainPrices(chain: String)
 
     @Transaction
     suspend fun replaceStores(chain: String, s: List<ChainStore>) { clearStores(chain); putStores(s) }
 
     @Transaction
-    suspend fun replacePrices(barcodes: List<String>, p: List<ChainPrice>) { clearPrices(barcodes); putPrices(p) }
+    suspend fun replacePrices(barcodes: List<String>, keep: List<String>, p: List<ChainPrice>) { clearPrices(barcodes, keep); putPrices(p) }
+
+    /** Phone-fetched chain: replace its stores and all its prices at once. */
+    @Transaction
+    suspend fun replaceLocal(chain: String, s: List<ChainStore>, p: List<ChainPrice>) {
+        replaceStores(chain, s); clearChainPrices(chain); putPrices(p)
+    }
 }
 
 data class BarcodePrice(val barcode: String, val agorot: Long)
@@ -80,7 +88,7 @@ fun priceKey(barcode: String?): String? = barcode?.trim()?.trimStart('0')?.takeI
  * Pulls the daily chain prices (written by the GitHub Action) into Room.
  * Read via Firestore REST with the public API key; the app always shows Room.
  */
-class PriceSync(private val db: AppDb, private val prefs: Prefs) {
+class PriceSync(private val db: AppDb, private val prefs: Prefs, private val local: LocalChains) {
     private val lock = Mutex()
     private val project = BuildConfig.FIREBASE_PROJECT
     private val key = BuildConfig.FIREBASE_API_KEY
@@ -90,19 +98,38 @@ class PriceSync(private val db: AppDb, private val prefs: Prefs) {
 
     /** Returns true when something was refreshed. Rate-limited unless [force]. */
     suspend fun sync(force: Boolean = false): Boolean = lock.withLock {
-        if (!configured) return false
-        val last = prefs.lastPriceSync()
-        if (!force && System.currentTimeMillis() - last < 3 * 3600_000L) return false
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val codes = db.products().barcodes().mapNotNull(::priceKey).distinct()
-                codes.forEach(::watch)
-                Chain.entries.forEach { ch -> fetchStores(ch)?.let { db.prices().replaceStores(ch.key, it) } }
-                codes.chunked(100).forEach { chunk -> db.prices().replacePrices(chunk, fetchPrices(chunk)) }
-                prefs.setLastPriceSync(System.currentTimeMillis())
-                true
-            }.getOrDefault(false)
+        val remote = if (configured && (force || System.currentTimeMillis() - prefs.lastPriceSync() >= 3 * 3600_000L)) syncRemote() else false
+        syncLocal(force) || remote
+    }
+
+    private val localKeys = LocalChains.LOCAL.map { it.key }
+
+    private suspend fun syncRemote(): Boolean = withContext(Dispatchers.IO) {
+        runCatching {
+            val codes = db.products().barcodes().mapNotNull(::priceKey).distinct()
+            codes.forEach(::watch)
+            (Chain.entries - LocalChains.LOCAL).forEach { ch -> fetchStores(ch)?.let { db.prices().replaceStores(ch.key, it) } }
+            codes.chunked(100).forEach { chunk -> db.prices().replacePrices(chunk, localKeys, fetchPrices(chunk)) }
+            prefs.setLastPriceSync(System.currentTimeMillis())
+            true
+        }.getOrDefault(false)
+    }
+
+    /** Victory / Carrefour: read on the phone (their sites only answer Israeli IPs). Daily, or when the city changes. */
+    private suspend fun syncLocal(force: Boolean): Boolean = withContext(Dispatchers.IO) {
+        val city = prefs.city.first()
+        val st = prefs.localState()
+        if (!force && st.city == city && System.currentTimeMillis() - st.at < 20 * 3600_000L) return@withContext false
+        val codes = db.products().barcodes().mapNotNull(::priceKey).toSet()
+        val canon = db.prices().cities().first().associateBy { LocalChains.norm(it) }
+        val status = LocalChains.LOCAL.joinToString(";") { ch ->
+            runCatching { local.fetch(ch, codes, city, canon) }.fold(
+                { r -> db.prices().replaceLocal(ch.key, r.stores, r.prices); "${ch.key}:ok:${r.stores.size}:${r.prices.size}" },
+                { e -> "${ch.key}:err:${e.javaClass.simpleName} ${e.message.orEmpty().take(80)}" },
+            )
         }
+        prefs.setLocalState(LocalState(System.currentTimeMillis(), city, status))
+        true
     }
 
     /** Ask the daily Action to track this barcode. Fire-and-forget. */

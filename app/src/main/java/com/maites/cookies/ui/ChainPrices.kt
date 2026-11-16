@@ -158,7 +158,7 @@ fun CityPickerSheet(app: CookiesApp, open: Boolean, onDismiss: () -> Unit, toast
                 val sel = city == current
                 Row(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(if (sel) c.accentSoft else Color.Transparent)
-                        .pressable({ scope.launch { app.prefs.setCity(city) }; onDismiss(); toast("המחירים לפי $city") })
+                        .pressable({ app.applicationScope.launch { app.prefs.setCity(city); app.priceSync.sync(force = true) }; onDismiss(); toast("המחירים לפי $city") })
                         .padding(horizontal = Space.l, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
