@@ -12,10 +12,13 @@
 
 ## סודות (שמות בלבד)
 - מוגדרים: `FIREBASE_TOKEN`, `GOOGLE_SERVICES_JSON` (Blaze פעיל).
-- keystore: הבעלים בלי מחשב → ה-CI ייצר keystore בפעם הראשונה וישמור אותו פרטי בפרויקט Firebase (Secret Manager/Storage), ומשם יקרא בכל build. לא צריך סודות נוספים.
+- keystore (2026-11-16): נוצר בסשן ונשלח לבעלים כקבצים (גיבוי ב-Drive). סודות: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` (=maites), `ANDROID_KEY_PASSWORD`. הערך הישן של `ANDROID_KEYSTORE_BASE64` לא היה base64 תקין — ממתין להחלפה ע"י הבעלים.
 - סביבת ענן `Cookies-By-Maites`: גישה ל-Open Food Facts ולאתרי המחירים.
 
-ישן: `FIREBASE_TOKEN`, `GOOGLE_SERVICES_JSON`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
+
+- שלב 2 — שלד Kotlin נבנה ומתקמפל ב-CI (`.github/workflows/android.yml`): מעטפת + סרגל תחתון עם `+`, טוקנים מהאב-טיפוס (Rubik, 4 accent, בהיר/כהה), Room (products), DataStore, "בדוק עדכונים" (GitHub latest release → הורדה → התקנה, כולל הרשאת מקורות לא ידועים).
+- גרסאות: tag `v0.1.<run_number>`, versionCode = run_number. אין main — ה-CI רץ על `ccr-*` ו-main. לינק קבוע: https://github.com/ohavs/cookies-by-maites/releases/latest/download/cookies-by-maites.apk
 
 ## הבא
-- להשלים אב-טיפוס ולקבל הערות.
+- אחרי שהסודות מוחלפים: להריץ workflow (workflow_dispatch) → release ראשון → לאמת הורדה.
+- שלב 3: מוצרים.
