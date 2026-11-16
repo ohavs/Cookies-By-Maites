@@ -38,6 +38,7 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
+          python scripts/prices/enable_api.py
           npm i -g firebase-tools@13 >/dev/null 2>&1
           if ! firebase firestore:databases:list --project "$FIREBASE_PROJECT" --non-interactive | grep -q "(default)"; then
             firebase firestore:databases:create "(default)" --location me-west1 --project "$FIREBASE_PROJECT" --non-interactive
