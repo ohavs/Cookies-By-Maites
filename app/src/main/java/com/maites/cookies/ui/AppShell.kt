@@ -34,7 +34,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -44,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.maites.cookies.CookiesApp
 import com.maites.cookies.data.UiPrefs
@@ -56,6 +59,11 @@ import com.maites.cookies.design.TextStyles
 import com.maites.cookies.design.Toast
 import com.maites.cookies.design.pressable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+sealed interface Page
+class ProductPg(val id: Long) : Page
+class EditPg(val id: Long? = null, val barcode: String? = null) : Page
 
 enum class Tab(val label: String, val emoji: String) {
     Recipes("מתכונים", "🍪"), Products("מוצרים", "🧈"), Shopping("קניות", "🛒"), Settings("הגדרות", "⚙️")
@@ -69,6 +77,12 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2200); toast = null } }
     val showToast: (String) -> Unit = { toast = it }
+    val stack = remember { mutableStateListOf<Page>() }
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val push: (Page) -> Unit = { stack.add(it) }
+    val pop: () -> Unit = { stack.removeLastOrNull() }
+    val replaceTop: (Page) -> Unit = { if (stack.isEmpty()) stack.add(it) else stack[stack.lastIndex] = it }
 
     Box(Modifier.fillMaxSize().background(c.bg)) {
         AnimatedContent(
@@ -79,7 +93,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
         ) { t ->
             when (t) {
                 Tab.Recipes -> RecipesScreen { addOpen = true }
-                Tab.Products -> ProductsScreen(app) { addOpen = true }
+                Tab.Products -> ProductsScreen(app, onAdd = { push(EditPg()) }, onOpen = { push(ProductPg(it)) })
                 Tab.Shopping -> ShoppingScreen()
                 Tab.Settings -> SettingsScreen(app, prefs, showToast)
             }
@@ -87,11 +101,38 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
 
         BottomBar(tab, onTab = { tab = it }, onAdd = { addOpen = true }, modifier = Modifier.align(Alignment.BottomCenter))
 
+        PageHost(stack, pop) { pg ->
+            when (pg) {
+                is ProductPg -> ProductPage(app, pg.id, onBack = pop, onEdit = { push(EditPg(pg.id)) }, toast = showToast)
+                is EditPg -> ProductEditor(
+                    app, pg.id, pg.barcode, onClose = pop,
+                    onSaved = { id -> if (pg.id == null) replaceTop(ProductPg(id)) else pop() },
+                    onExisting = { id -> replaceTop(ProductPg(id)) },
+                    toast = showToast,
+                )
+            }
+        }
+
         Toast(toast, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 104.dp))
 
         AddSheet(open = addOpen, onDismiss = { addOpen = false }) { what ->
             addOpen = false
-            showToast("$what — נבנה בשלב הבא")
+            when (what) {
+                AddWhat.Recipe -> showToast("עורך המתכונים — בשלב 5")
+                AddWhat.Product -> { tab = Tab.Products; push(EditPg()) }
+                AddWhat.Scan -> scope.launch {
+                    when (val r = scanBarcode(ctx)) {
+                        is ScanResult.Code -> {
+                            tab = Tab.Products
+                            val existing = app.db.products().byBarcode(r.value)
+                            if (existing != null) { showToast("${existing.name} כבר ברשימה"); push(ProductPg(existing.id)) }
+                            else push(EditPg(barcode = r.value))
+                        }
+                        is ScanResult.Failed -> showToast("הסריקה לא זמינה במכשיר")
+                        ScanResult.Cancelled -> Unit
+                    }
+                }
+            }
         }
     }
 }
@@ -143,8 +184,10 @@ private fun TabItem(t: Tab, current: Tab, onTab: (Tab) -> Unit) {
     }
 }
 
+enum class AddWhat { Recipe, Product, Scan }
+
 @Composable
-private fun AddSheet(open: Boolean, onDismiss: () -> Unit, onPick: (String) -> Unit) {
+private fun AddSheet(open: Boolean, onDismiss: () -> Unit, onPick: (AddWhat) -> Unit) {
     val c = C.colors
     BackHandler(open, onDismiss)
     Box(Modifier.fillMaxSize()) {
@@ -168,8 +211,9 @@ private fun AddSheet(open: Boolean, onDismiss: () -> Unit, onPick: (String) -> U
                 Text("מה מוסיפים?", style = TextStyles.title, color = c.ink)
                 Spacer(Modifier.height(Space.l))
                 Row(horizontalArrangement = Arrangement.spacedBy(Space.m)) {
-                    AddOption("🍪", "מתכון", c.tPeach, Modifier.weight(1f)) { onPick("מתכון חדש") }
-                    AddOption("🧈", "מוצר", c.tButter, Modifier.weight(1f)) { onPick("מוצר חדש") }
+                    AddOption("🍪", "מתכון", c.tPeach, Modifier.weight(1f)) { onPick(AddWhat.Recipe) }
+                    AddOption("🧈", "מוצר", c.tButter, Modifier.weight(1f)) { onPick(AddWhat.Product) }
+                    AddOption("📷", "סריקה", c.tSky, Modifier.weight(1f)) { onPick(AddWhat.Scan) }
                 }
                 Spacer(Modifier.height(Space.s))
             }

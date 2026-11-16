@@ -21,7 +21,6 @@ import com.maites.cookies.design.EmptyState
 import com.maites.cookies.design.Space
 import com.maites.cookies.design.StickerButton
 import com.maites.cookies.design.TextStyles
-import java.util.Locale
 
 @Composable
 fun ScreenTitle(title: String, sub: String? = null) {
@@ -44,34 +43,6 @@ fun RecipesScreen(onAdd: () -> Unit) {
 }
 
 @Composable
-fun ProductsScreen(app: CookiesApp, onAdd: () -> Unit) {
-    val products by app.db.products().all().collectAsStateWithLifecycle(emptyList())
-    Column(Modifier.fillMaxSize()) {
-        ScreenTitle("מוצרים")
-        if (products.isEmpty()) {
-            Box(Modifier.weight(1f).padding(bottom = 96.dp), contentAlignment = Alignment.Center) {
-                EmptyState("🧈", "עוד אין מוצרים", "חמאה, קמח, שוקולד — מוסיפים פעם אחת, והמחיר מתעדכן לבד.", C.colors.tButter) {
-                    StickerButton("מוצר חדש", onAdd)
-                }
-            }
-        } else {
-            LazyColumn(
-                Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(Space.m),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(start = Space.gutter, end = Space.gutter, bottom = 120.dp),
-            ) {
-                items(products, key = { it.id }) { p ->
-                    CCard {
-                        Text(p.name, style = TextStyles.heading)
-                        p.priceAgorot?.let { Text(formatShekel(it), style = TextStyles.label, color = C.colors.inkDim) }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun ShoppingScreen() {
     Column(Modifier.fillMaxSize()) {
         ScreenTitle("קניות")
@@ -81,5 +52,3 @@ fun ShoppingScreen() {
     }
 }
 
-/** Money is always agorot (Long); shown as ₪ with 2 decimals. */
-fun formatShekel(agorot: Long): String = "₪" + String.format(Locale.US, "%,.2f", agorot / 100.0)
