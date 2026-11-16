@@ -47,9 +47,10 @@
   - Room v7: `gid` (UUID) + `dirty` ב-products/recipes, טבלת `tombstones`. Room = מקור האמת; ענן = `users/{uid}/{products|recipes}/{gid}` עם `syncAt` (זמן שרת). משיכה לפי watermark, עריכה מקומית שלא נשלחה מנצחת, מוצרים עם אותו ברקוד מתמזגים. תמונות מתכון → Storage `users/{uid}/photos/<file>.webp`.
   - טריגרים: פתיחת אפליקציה, 2.5 שנ' אחרי שינוי מקומי, "לסנכרן עכשיו". בהתחברות — הכל מסומן לשליחה (מיזוג).
   - `.github/workflows/firebase.yml` + `scripts/firebase/setup.py`: מפעיל APIs, רושם SHA-1/256 של ה-keystore, יוצר bucket (`US-EAST1`), מפרסם firestore+storage rules. ה-build קורא `GOOGLE_WEB_CLIENT_ID`/`STORAGE_BUCKET` (`--read-only`). נבדק: bucket נוצר, SHA נרשמו, rules פורסמו.
-  - חסר: ספק Google ב-Firebase Auth (פעולה ידנית של הבעלים) → הרצה מחדש של Android release. מחיקת תמונות מ-Storage כשמתכון נמחק — לא מומש. העברת תמונות מוצר מ-OFF ל-Storage — לא מומש.
+  - ספק Google הופעל (2026-11-16), v0.1.17 נבנתה עם `GOOGLE_WEB_CLIENT_ID`; ה-API key מורשה ל-identitytoolkit/securetoken (נבדק). **לא נבדק בטלפון.**
+  - חסר: מחיקת תמונות מ-Storage כשמתכון נמחק — לא מומש. העברת תמונות מוצר מ-OFF ל-Storage — לא מומש.
 
 ## הבא
-- שלב 7 — להשלים: הפעלת Google, בדיקה בטלפון, תמונות מוצר ל-Storage.
+- שלב 7 — להשלים: בדיקת התחברות+סנכרון בטלפון (משוב מהבעלים), תמונות מוצר ל-Storage, מחיקת תמונות מתכון מ-Storage.
 - אימות ויקטורי/קרפור על הטלפון לפי שורת הסטטוס בהגדרות. העברת תמונות ל-Storage הועברה לשלב 7.
 - עלויות: Actions חינם (repo ציבורי), Firestore עשרות כתיבות ביום (בתוך החינמי).
