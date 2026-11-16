@@ -1,0 +1,863 @@
+<title>Cookies by Maites</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Karantina:wght@400;700&display=swap">
+<style>
+/* Layout: a phone-sized app (full screen on phones, framed on desktop). Two giant tabs on top, one task per screen, everything else in sheets.
+   Tokens are Noted's, 1:1 — every component reads only from them. */
+:root {
+  --bg: #F5F1EA; --bg-2: #EDE7DD; --surface: #FFFDF9;
+  --ink: #1B1915; --ink-2: #6B655C; --ink-3: #A69F94;
+  --line: rgba(27,25,21,.09); --scrim: rgba(30,26,20,.28);
+  --inverse: #1C1A17; --inverse-2: #2A2723; --inverse-ink: #F6F2EA; --inverse-ink-2: #9C958A;
+  --danger: #D8402F; --danger-soft: #FBE1DC;
+  --good: #1E7552; --good-soft: #D3EADF;
+  --shadow-card: 0 -1px 0 rgba(255,255,255,.55) inset, 0 -10px 28px -18px rgba(40,30,10,.38);
+  --shadow-float: 0 18px 50px -18px rgba(30,20,5,.45), 0 2px 8px rgba(30,20,5,.08);
+  --n-butter: #FAE5A0; --n-peach: #F9CFB6; --n-rose: #F5C6D2; --n-lilac: #DACDF6;
+  --n-sky: #C4DDF5; --n-mint: #C6EAD5; --n-sage: #DBE4C0; --n-sand: #ECE1D2;
+  --note-ink: #1D1A15; --note-ink-2: rgba(29,26,21,.62);
+  --dough-a: #E9B872; --dough-b: #C98B45; --chip: #4A2C1A;
+  --accent: #E0542C; --accent-ink: #FFFFFF; --accent-soft: #F9DDD2;
+  --r-card: 30px; --r-lg: 26px; --r-md: 18px; --r-sm: 13px; --gutter: 16px;
+  --font-display: "Karantina", "Heebo", system-ui, sans-serif;
+  --font-body: "Heebo", system-ui, sans-serif;
+  --ds: 1.38; /* Karantina is condensed: display sizes scale up */
+  --ease-touch: cubic-bezier(.34,1.56,.64,1); --dur-touch: 420ms;
+  --ease-glide: cubic-bezier(.2,.8,.2,1); --dur-glide: 480ms;
+  --ease-out: cubic-bezier(.2,.7,.3,1); --dur-fast: 150ms;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12110F; --bg-2: #1A1916; --surface: #1F1D1A;
+  --ink: #F3EEE6; --ink-2: #A59E93; --ink-3: #6A645B;
+  --line: rgba(243,238,230,.09); --scrim: rgba(0,0,0,.5);
+  --inverse: #2A2824; --inverse-2: #37342F; --inverse-ink: #F6F2EA; --inverse-ink-2: #A39C90;
+  --danger: #FF6A55; --danger-soft: #3D1F1A; --good: #45C891; --good-soft: #173A2B;
+  --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 -10px 28px -16px rgba(0,0,0,.8);
+  --shadow-float: 0 18px 50px -12px rgba(0,0,0,.8);
+  --n-butter: #4A4024; --n-peach: #4C3326; --n-rose: #482C35; --n-lilac: #383150;
+  --n-sky: #27384A; --n-mint: #243D31; --n-sage: #343D28; --n-sand: #3A342D;
+  --note-ink: #F4EFE7; --note-ink-2: rgba(244,239,231,.6);
+  --dough-a: #C9984F; --dough-b: #9A6A33; --chip: #2A170C;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #12110F; --bg-2: #1A1916; --surface: #1F1D1A;
+  --ink: #F3EEE6; --ink-2: #A59E93; --ink-3: #6A645B;
+  --line: rgba(243,238,230,.09); --scrim: rgba(0,0,0,.5);
+  --inverse: #2A2824; --inverse-2: #37342F; --inverse-ink: #F6F2EA; --inverse-ink-2: #A39C90;
+  --danger: #FF6A55; --danger-soft: #3D1F1A; --good: #45C891; --good-soft: #173A2B;
+  --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 -10px 28px -16px rgba(0,0,0,.8);
+  --shadow-float: 0 18px 50px -12px rgba(0,0,0,.8);
+  --n-butter: #4A4024; --n-peach: #4C3326; --n-rose: #482C35; --n-lilac: #383150;
+  --n-sky: #27384A; --n-mint: #243D31; --n-sage: #343D28; --n-sand: #3A342D;
+  --note-ink: #F4EFE7; --note-ink-2: rgba(244,239,231,.6);
+  --dough-a: #C9984F; --dough-b: #9A6A33; --chip: #2A170C;
+  color-scheme: dark;
+}
+:root[data-accent="forest"] { --accent: #1E7552; --accent-soft: #D3EADF; }
+:root[data-accent="ink"]    { --accent: #3442CF; --accent-soft: #DDE0FA; }
+:root[data-accent="plum"]   { --accent: #8E3AB3; --accent-soft: #EBDAF3; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --accent: #FF7A4F; --accent-ink: #1B0E08; --accent-soft: #4A271B; }
+  :root:not([data-theme="light"])[data-accent="forest"] { --accent: #45C891; --accent-ink: #06170F; --accent-soft: #173A2B; }
+  :root:not([data-theme="light"])[data-accent="ink"]    { --accent: #8A95FF; --accent-ink: #0B0E2B; --accent-soft: #23284F; }
+  :root:not([data-theme="light"])[data-accent="plum"]   { --accent: #CF93F0; --accent-ink: #1E0B29; --accent-soft: #3A2348; }
+}
+:root[data-theme="dark"] { --accent: #FF7A4F; --accent-ink: #1B0E08; --accent-soft: #4A271B; }
+:root[data-theme="dark"][data-accent="forest"] { --accent: #45C891; --accent-ink: #06170F; --accent-soft: #173A2B; }
+:root[data-theme="dark"][data-accent="ink"]    { --accent: #8A95FF; --accent-ink: #0B0E2B; --accent-soft: #23284F; }
+:root[data-theme="dark"][data-accent="plum"]   { --accent: #CF93F0; --accent-ink: #1E0B29; --accent-soft: #3A2348; }
+
+@supports (corner-shape: squircle) {
+  :root { --r-card: 54px; --r-lg: 46px; --r-md: 32px; --r-sm: 24px; }
+  .sq { corner-shape: squircle; }
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+bdi { unicode-bidi: isolate; }
+
+#device {
+  position: relative; height: 100%; width: 100%;
+  overflow: hidden; background: var(--bg); isolation: isolate;
+}
+@media (min-width: 640px) {
+  body { background: var(--bg-2); display: grid; place-items: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  #device { width: 400px; height: min(860px, 96%); border-radius: 44px;
+    box-shadow: 0 40px 100px -30px rgba(0,0,0,.45), 0 0 0 10px var(--inverse), 0 0 0 11px rgba(0,0,0,.2); }
+}
+
+/* pressable: the touch spring on release */
+.press { transition: transform var(--dur-touch) var(--ease-touch); }
+.press:active { transform: scale(.94); transition-duration: var(--dur-fast); transition-timing-function: var(--ease-out); }
+.display { font-family: var(--font-display); font-weight: 700; line-height: 1.05; }
+
+/* ---------------------------------------------------------- top */
+.top {
+  position: absolute; inset: 0 0 auto; z-index: 5;
+  padding: max(14px, env(safe-area-inset-top)) var(--gutter) 0;
+  background: linear-gradient(var(--bg) 78%, transparent);
+}
+.top-row { display: flex; align-items: center; justify-content: space-between; height: 48px; }
+.brand { font-size: 13px; font-weight: 800; letter-spacing: .08em; color: var(--ink-2); }
+.avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: conic-gradient(from 200deg, #F4B98F, #E58F6F, #C9A2E8, #F4B98F);
+  display: grid; place-items: center; color: #2A1A10;
+  font-family: var(--font-display); font-weight: 700; font-size: 24px;
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 4.5px var(--line);
+}
+.tabs { display: flex; gap: 22px; align-items: flex-start; padding-top: 4px; }
+.tab {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: calc(46px * var(--ds)); line-height: 1; color: var(--ink-3);
+  display: flex; gap: 6px; align-items: flex-start;
+}
+.tab .count {
+  font-family: var(--font-body); font-weight: 700; font-size: 14px; margin-top: 12px;
+  color: var(--accent); min-width: 18px;
+}
+.tab-bar { position: relative; height: 3px; margin-top: 2px; }
+.tab-bar i { position: absolute; top: 0; height: 3px; border-radius: 3px; background: var(--ink); inset-inline-start: 0; width: 40px; }
+
+/* ---------------------------------------------------------- panes */
+.pane {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  overscroll-behavior: contain; scrollbar-width: none;
+  padding: calc(max(14px, env(safe-area-inset-top)) + 150px) var(--gutter) 120px;
+  will-change: transform;
+}
+.pane::-webkit-scrollbar { display: none; }
+
+.subrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; color: var(--ink-2); font-size: 15px; }
+.filters { display: flex; gap: 18px; }
+.filter { font-weight: 700; font-size: 15px; color: var(--ink-3); padding: 6px 0; position: relative; transition: color var(--dur-glide) var(--ease-glide); }
+.filter.on { color: var(--ink); }
+.filter.on::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--accent); }
+.city-btn { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--ink); padding: 8px 12px; border-radius: 999px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.city-btn svg { width: 16px; height: 16px; }
+
+/* recipe cards */
+.cards { display: grid; gap: 14px; }
+.rcard {
+  position: relative; display: grid; grid-template-columns: 1fr 112px; align-items: center;
+  min-height: 150px; padding: 20px 22px; border-radius: var(--r-card);
+  color: var(--note-ink); box-shadow: var(--shadow-card); text-align: start; width: 100%;
+}
+.rcard h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: calc(26px * var(--ds)); line-height: 1.02; text-wrap: balance; }
+.rcard .meta { margin-top: 6px; font-size: 14px; font-weight: 600; color: var(--note-ink-2); }
+.rcard .price { margin-top: 14px; display: flex; align-items: baseline; gap: 6px; }
+.rcard .price b { font-family: var(--font-display); font-size: calc(30px * var(--ds)); line-height: 1; }
+.rcard .price span { font-size: 13px; font-weight: 700; color: var(--note-ink-2); }
+.rcard .art { width: 124px; height: 124px; margin-inline-end: -26px; filter: drop-shadow(0 10px 14px rgba(60,30,5,.25)); }
+.rcard .art img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+/* product rows */
+.plist { display: grid; gap: 2px; background: var(--surface); border-radius: var(--r-lg); padding: 6px; box-shadow: 0 0 0 1px var(--line); }
+.prow { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 12px 10px; border-radius: var(--r-md); text-align: start; width: 100%; }
+.prow:hover { background: var(--bg); }
+.prow + .prow { border-top: 1px solid var(--line); border-radius: 0 0 var(--r-md) var(--r-md); }
+.pic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; color: var(--note-ink); }
+.pic svg { width: 22px; height: 22px; }
+.prow .nm { font-weight: 700; font-size: 16.5px; display: flex; align-items: center; gap: 6px; }
+.prow .nm svg { width: 14px; height: 14px; color: var(--accent); }
+.prow .sz { font-size: 13.5px; color: var(--ink-2); font-weight: 500; margin-top: 2px; }
+.prow .pr { text-align: end; }
+.prow .pr b { font-family: var(--font-display); font-size: calc(22px * var(--ds)); line-height: 1; display: block; }
+.prow .pr small { font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.tag { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); vertical-align: 1px; }
+.tag.muted { background: var(--bg-2); color: var(--ink-2); }
+
+.fab {
+  position: absolute; z-index: 6; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); inset-inline-end: 20px;
+  width: 64px; height: 64px; border-radius: 22px; background: var(--inverse); color: var(--inverse-ink);
+  display: grid; place-items: center; box-shadow: var(--shadow-float);
+}
+.fab svg { width: 28px; height: 28px; }
+.fab2 { inset-inline-end: 96px; width: 52px; height: 52px; border-radius: 18px; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-float), 0 0 0 1px var(--line); }
+.fab2 svg { width: 24px; height: 24px; }
+
+/* ---------------------------------------------------------- sheets */
+.scrim { position: absolute; inset: 0; background: var(--scrim); opacity: 0; z-index: 20; }
+.sheet {
+  position: absolute; inset: auto 0 0; z-index: 21;
+  max-height: 94%; display: flex; flex-direction: column;
+  background: var(--bg); border-radius: var(--r-card) var(--r-card) 0 0;
+  box-shadow: var(--shadow-float); will-change: transform;
+}
+.sheet .grab { flex: none; height: 26px; display: grid; place-items: center; cursor: grab; touch-action: none; }
+.sheet .grab::before { content: ""; width: 42px; height: 5px; border-radius: 5px; background: var(--ink-3); opacity: .5; }
+.sheet .body { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding: 0 var(--gutter) calc(28px + env(safe-area-inset-bottom, 0px)); }
+.sheet .body::-webkit-scrollbar { display: none; }
+.sheet h2 { margin: 4px 0 2px; font-family: var(--font-display); font-weight: 700; font-size: calc(36px * var(--ds)); line-height: 1; text-wrap: balance; }
+.sheet .sub { color: var(--ink-2); font-size: 15px; font-weight: 500; }
+.section { margin-top: 26px; }
+.section > .label { font-size: 13px; font-weight: 800; color: var(--ink-2); letter-spacing: .04em; margin: 0 4px 10px; display: flex; justify-content: space-between; align-items: center; }
+.box { background: var(--surface); border-radius: var(--r-lg); box-shadow: 0 0 0 1px var(--line); padding: 6px 16px; }
+.line { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; }
+.line + .line { border-top: 1px solid var(--line); }
+.line .k { font-weight: 600; }
+.line .k small { display: block; font-size: 13px; color: var(--ink-2); font-weight: 500; }
+.line .v { font-weight: 700; text-align: end; white-space: nowrap; }
+
+/* recipe hero */
+.hero { position: relative; height: 210px; margin: 0 calc(var(--gutter) * -1) 6px; display: grid; place-items: center; overflow: hidden; }
+.hero .bgc { position: absolute; inset: 0 var(--gutter); border-radius: var(--r-card); }
+.hero .art { position: relative; width: 190px; height: 190px; filter: drop-shadow(0 18px 22px rgba(60,30,5,.3)); }
+.hero .art img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.hero .cam { position: absolute; bottom: 14px; inset-inline-end: calc(var(--gutter) + 14px); width: 44px; height: 44px; border-radius: 15px; background: var(--surface); display: grid; place-items: center; box-shadow: var(--shadow-float); }
+.hero .cam svg { width: 22px; height: 22px; }
+.hero .dots { position: absolute; bottom: 18px; display: flex; gap: 6px; }
+.hero .dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--note-ink); opacity: .25; transition: width var(--dur-glide) var(--ease-glide), opacity var(--dur-glide); }
+.hero .dots i.on { width: 18px; opacity: .7; }
+
+/* yield */
+.yield { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; text-align: center; padding: 10px 6px; }
+.round { width: 52px; height: 52px; border-radius: 18px; background: var(--bg); display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line); }
+.round svg { width: 22px; height: 22px; }
+.yield .big { font-family: var(--font-display); font-weight: 700; font-size: calc(64px * var(--ds)); line-height: .9; touch-action: none; cursor: ns-resize; user-select: none; }
+.yield .unit { font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.seg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--bg-2); border-radius: 15px; padding: 4px; margin: 4px 0 10px; }
+.seg button { position: relative; z-index: 1; height: 38px; font-weight: 700; font-size: 15px; color: var(--ink-2); transition: color var(--dur-glide) var(--ease-glide); }
+.seg button.on { color: var(--ink); }
+.seg .thumb { position: absolute; top: 4px; bottom: 4px; border-radius: 11px; background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+/* ingredients */
+.ing { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; width: 100%; text-align: start; min-height: 58px; }
+.ing + .ing { border-top: 1px solid var(--line); }
+.ing .pic { width: 36px; height: 36px; border-radius: 12px; }
+.ing .pic svg { width: 18px; height: 18px; }
+.ing .q { font-size: 13.5px; color: var(--ink-2); font-weight: 600; }
+.ing .c { font-weight: 700; }
+.ing .c small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 600; }
+
+/* costing — the one inverse surface */
+.cost { background: var(--inverse); color: var(--inverse-ink); border-radius: var(--r-card); padding: 20px 20px 18px; }
+.cost .line { min-height: 44px; }
+.cost .line + .line { border-color: rgba(255,255,255,.08); }
+.cost .k small { color: var(--inverse-ink-2); }
+.cost .v small { color: var(--inverse-ink-2); font-weight: 600; font-size: 12.5px; margin-inline-end: 6px; }
+.cost .total { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 12px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,.18); }
+.cost .total .lbl { font-size: 13px; font-weight: 700; color: var(--inverse-ink-2); }
+.cost .total b { display: block; font-family: var(--font-display); font-size: calc(44px * var(--ds)); line-height: .95; }
+.cost .total .side { text-align: end; font-size: 14px; color: var(--inverse-ink-2); font-weight: 600; }
+.cost .total .side b { font-size: calc(24px * var(--ds)); color: var(--inverse-ink); }
+.mini { display: inline-flex; align-items: center; gap: 2px; background: var(--inverse-2); border-radius: 11px; padding: 2px; }
+.mini button { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; }
+.mini button svg { width: 15px; height: 15px; }
+.mini span { min-width: 54px; text-align: center; font-weight: 700; }
+
+.profit { margin-top: 14px; background: var(--surface); border-radius: var(--r-lg); box-shadow: 0 0 0 1px var(--line); padding: 16px; }
+.profit .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.profit .sell { font-family: var(--font-display); font-weight: 700; font-size: calc(32px * var(--ds)); line-height: 1; }
+.bar { height: 12px; border-radius: 6px; background: var(--bg-2); overflow: hidden; margin: 14px 0 8px; display: flex; }
+.bar i { display: block; height: 100%; }
+.bar .c1 { background: var(--ink-3); }
+.bar .c2 { background: var(--accent); }
+.legend { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.legend b { color: var(--ink); }
+.hint { margin-top: 10px; width: 100%; text-align: start; font-size: 14px; color: var(--ink-2); font-weight: 600; }
+.hint u { color: var(--accent); text-decoration: none; font-weight: 800; }
+
+.notes { background: var(--n-butter); color: var(--note-ink); border-radius: var(--r-lg); padding: 16px 18px; font-size: 15.5px; line-height: 1.5; }
+
+/* product sheet */
+.phead { display: flex; gap: 14px; align-items: center; }
+.phead .pic { width: 64px; height: 64px; border-radius: 20px; }
+.phead .pic svg { width: 32px; height: 32px; }
+.star { width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; background: var(--surface); box-shadow: 0 0 0 1px var(--line); margin-inline-start: auto; flex: none; }
+.star svg { width: 22px; height: 22px; }
+.star.on { color: var(--accent); }
+.barcode { font-family: ui-monospace, monospace; font-size: 12.5px; color: var(--ink-3); letter-spacing: .06em; }
+.offer { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 12px 0; }
+.offer + .offer { border-top: 1px solid var(--line); }
+.offer .ch { font-weight: 700; }
+.offer .br { font-size: 13px; color: var(--ink-2); }
+.offer .p { font-family: var(--font-display); font-weight: 700; font-size: calc(22px * var(--ds)); line-height: 1; grid-row: span 2; text-align: end; }
+.offer .meter { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: var(--bg-2); overflow: hidden; }
+.offer .meter i { display: block; height: 100%; border-radius: 3px; background: var(--ink-3); }
+.offer.best .meter i { background: var(--accent); }
+.manual { display: flex; align-items: center; gap: 10px; }
+.field { flex: 1; display: flex; align-items: center; gap: 6px; height: 50px; padding: 0 14px; background: var(--bg); border-radius: 15px; box-shadow: 0 0 0 1px var(--line) inset; font-weight: 700; }
+.field input { border: 0; background: none; outline: none; width: 100%; font-weight: 700; font-size: 18px; }
+.btn { height: 50px; padding: 0 20px; border-radius: 15px; font-weight: 700; background: var(--inverse); color: var(--inverse-ink); }
+.btn.ghost { background: var(--bg-2); color: var(--ink); }
+.btn.accent { background: var(--accent); color: var(--accent-ink); }
+
+/* switch */
+.sw { width: 52px; height: 32px; border-radius: 16px; background: var(--bg-2); box-shadow: 0 0 0 1px var(--line) inset; position: relative; flex: none; transition: background var(--dur-glide) var(--ease-glide); }
+.sw::after { content: ""; position: absolute; top: 4px; inset-inline-start: 4px; width: 24px; height: 24px; border-radius: 12px; background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform var(--dur-touch) var(--ease-touch); }
+.sw.on { background: var(--accent); box-shadow: none; }
+.sw.on::after { transform: translateX(-20px); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0 14px; }
+.chip { height: 36px; padding: 0 14px; border-radius: 12px; font-weight: 700; font-size: 14px; background: var(--bg); color: var(--ink-2); box-shadow: 0 0 0 1px var(--line) inset; transition: background var(--dur-glide) var(--ease-glide), color var(--dur-glide); }
+.chip.on { background: var(--ink); color: var(--bg); box-shadow: none; }
+.sw-row { display: flex; gap: 12px; padding: 12px 0; }
+.swatch { width: 44px; height: 44px; border-radius: 15px; position: relative; }
+.swatch.on::after { content: ""; position: absolute; inset: -5px; border-radius: 19px; box-shadow: 0 0 0 2.5px var(--ink); }
+
+.cities { display: grid; gap: 2px; }
+.city { display: flex; justify-content: space-between; align-items: center; min-height: 56px; font-weight: 700; font-size: 18px; width: 100%; padding: 0 4px; }
+.city + .city { border-top: 1px solid var(--line); }
+.city small { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.city svg { width: 22px; height: 22px; color: var(--accent); }
+
+.toast { position: absolute; z-index: 40; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0;
+  background: var(--inverse); color: var(--inverse-ink); padding: 14px 20px; border-radius: 18px; font-weight: 700; font-size: 15px; box-shadow: var(--shadow-float);
+  white-space: nowrap; pointer-events: none; transition: transform var(--dur-touch) var(--ease-touch), opacity var(--dur-fast); }
+.toast.show { transform: translate(-50%, 0); opacity: 1; }
+.toast u { text-decoration: none; color: var(--accent); margin-inline-start: 10px; }
+
+.proto-note { margin-top: 26px; font-size: 13px; color: var(--ink-3); text-align: center; line-height: 1.5; }
+.empty { text-align: center; padding: 50px 20px; color: var(--ink-2); }
+.empty b { display: block; font-family: var(--font-display); font-size: calc(26px * var(--ds)); color: var(--ink); line-height: 1.1; margin-bottom: 6px; }
+
+.search { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px; background: var(--surface); border-radius: 16px; box-shadow: 0 0 0 1px var(--line); margin-bottom: 16px; color: var(--ink-3); }
+.search svg { width: 20px; height: 20px; flex: none; }
+.search input { border: 0; outline: none; background: none; width: 100%; font-size: 16px; color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 1ms !important; } }
+</style>
+
+<div id="device" dir="rtl" lang="he">
+  <header class="top">
+    <div class="top-row">
+      <span class="brand">COOKIES BY MAITES</span>
+      <button class="avatar press" id="avatar" aria-label="הגדרות">מ</button>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" data-i="0" role="tab">מתכונים<span class="count num" id="c0"></span></button>
+      <button class="tab" data-i="1" role="tab">מוצרים<span class="count num" id="c1"></span></button>
+    </nav>
+    <div class="tab-bar"><i id="tabInd"></i></div>
+  </header>
+
+  <section class="pane" id="p0" aria-label="מתכונים">
+    <div class="subrow"><div class="filters" id="catFilters"></div></div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="pane" id="p1" aria-label="מוצרים">
+    <div class="subrow">
+      <div class="filters" id="prodFilters">
+        <button class="filter on" data-f="all">הכל</button>
+        <button class="filter" data-f="fav">מועדפים</button>
+      </div>
+      <button class="city-btn press" id="cityBtn"></button>
+    </div>
+    <label class="search"><span id="searchIcon"></span><input id="q" placeholder="חיפוש מוצר או ברקוד" autocomplete="off"></label>
+    <div id="plist"></div>
+  </section>
+
+  <button class="fab fab2 press" id="scan" aria-label="סריקת ברקוד" hidden></button>
+  <button class="fab press" id="fab" aria-label="הוספה"></button>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------- motion: Noted's two springs */
+const MOTION = { touch: { k: 520, c: 25 }, glide: { k: 230, c: 30 } };
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function springCurve({ k, c }) {
+  let x = 0, v = 0, t = 0; const dt = 1/600, pts = [];
+  while (t < 3) { const a = -k*(x-1) - c*v; v += a*dt; x += v*dt; t += dt; pts.push(x); if (Math.abs(x-1) < .001 && Math.abs(v) < .02) break; }
+  const N = 48, out = []; for (let i = 0; i <= N; i++) out.push(+pts[Math.min(pts.length-1, Math.round(i/N*(pts.length-1)))].toFixed(4));
+  out[0] = 0; out[N] = 1; return { easing: `linear(${out.join(',')})`, dur: Math.round(t*1000) };
+}
+if (CSS.supports('transition-timing-function', 'linear(0, 1)')) for (const n of ['touch', 'glide']) {
+  const s = springCurve(MOTION[n]); document.documentElement.style.setProperty(`--ease-${n}`, s.easing); document.documentElement.style.setProperty(`--dur-${n}`, s.dur + 'ms');
+}
+class Spring {
+  constructor(v, on) { this.v = v; this.vel = 0; this.target = v; this.on = on; this.raf = 0; }
+  set(v) { cancelAnimationFrame(this.raf); this.raf = 0; this.v = this.target = v; this.vel = 0; this.on(v); }
+  to(target, cfg = MOTION.glide, vel) {
+    this.target = target; this.cfg = cfg; if (vel != null) this.vel = vel;
+    if (reduce) { this.set(target); return Promise.resolve(); }
+    return new Promise(res => { this.res = res; if (!this.raf) { this.last = performance.now(); this.raf = requestAnimationFrame(this.tick); } });
+  }
+  tick = now => {
+    const dt = Math.min(.05, (now - this.last) / 1000); this.last = now;
+    const { k, c } = this.cfg, steps = Math.max(1, Math.ceil(dt*480)), h = dt/steps;
+    for (let i = 0; i < steps; i++) { const a = -k*(this.v - this.target) - c*this.vel; this.vel += a*h; this.v += this.vel*h; }
+    if (Math.abs(this.v - this.target) < .0008 * Math.max(1, Math.abs(this.target)) && Math.abs(this.vel) < .01 * Math.max(1, Math.abs(this.target))) {
+      this.v = this.target; this.vel = 0; this.raf = 0; this.on(this.v); this.res && this.res(); return;
+    }
+    this.on(this.v); this.raf = requestAnimationFrame(this.tick);
+  };
+}
+function tracker() { const p = []; return { add(y) { const t = performance.now(); p.push([t, y]); while (p.length > 2 && t - p[0][0] > 90) p.shift(); },
+  vel() { if (p.length < 2) return 0; const [t0, y0] = p[0], [t1, y1] = p[p.length-1]; return t1 === t0 ? 0 : (y1-y0)/((t1-t0)/1000); } }; }
+const buzz = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
+
+/* ---------------------------------------------------------------- icons (stroke, Phosphor-like) */
+const P = {
+  plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+  star: '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  down: '<path d="m6 9.5 6 6 6-6"/>', check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  camera: '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/>',
+  scan: '<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M8 9v6M11 9v6M14 9v6M17 9v6"/>',
+  bag: '<path d="M5 8h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+  wheat: '<path d="M12 21V9M12 9c-2.5 0-4-1.8-4-4.5 2.5 0 4 1.8 4 4.5zM12 9c2.5 0 4-1.8 4-4.5-2.5 0-4 1.8-4 4.5zM12 14c-2.5 0-4-1.8-4-4.5 2.5 0 4 1.8 4 4.5zM12 14c2.5 0 4-1.8 4-4.5-2.5 0-4 1.8-4 4.5z"/>',
+  cube: '<path d="m12 3.5 7.5 4.2v8.6L12 20.5l-7.5-4.2V7.7z"/><path d="m4.5 7.7 7.5 4.2 7.5-4.2M12 11.9v8.6"/>',
+  egg: '<path d="M12 3.5c3.5 0 6.5 5.5 6.5 10a6.5 6.5 0 0 1-13 0c0-4.5 3-10 6.5-10z"/>',
+  drop: '<path d="M12 3.5s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/>',
+  bar: '<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M5 9.3h14M5 14.6h14M12 4v16"/>',
+  butter: '<path d="M3.5 15 8 9h12.5v6z"/><path d="M3.5 15v3h17v-3"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
+  pen: '<path d="m15 5 4 4L8.5 19.5H4.5v-4z"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  cart: '<path d="M3.5 4.5h2.2l2 11h10.8l1.8-7.5H6.6"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
+};
+const ic = (n, fill) => `<svg viewBox="0 0 24 24" fill="${fill ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+/* ---------------------------------------------------------------- sample data (examples, not real prices) */
+const CHAINS = [
+  { id: 'shufersal', name: 'שופרסל דיל', f: 1.07 }, { id: 'rami', name: 'רמי לוי', f: .92 },
+  { id: 'victory', name: 'ויקטורי', f: .97 }, { id: 'yochananof', name: 'יוחננוף', f: .95 },
+  { id: 'osher', name: 'אושר עד', f: .93 }, { id: 'carrefour', name: 'קרפור', f: 1.0 },
+];
+const CITIES = {
+  'תל אביב': { f: 1.05, streets: ['אבן גבירול', 'דיזנגוף', 'יגאל אלון', 'רמת אביב', 'נמל תל אביב', 'פלורנטין'] },
+  'ירושלים': { f: 1.0, streets: ['תלפיות', 'גבעת שאול', 'פסגת זאב', 'הר חומה', 'מלחה', 'רוממה'] },
+  'חיפה': { f: .99, streets: ['חוצות המפרץ', 'כרמל', 'נווה שאנן', 'צ׳ק פוסט', 'הדר', 'גרנד קניון'] },
+  'באר שבע': { f: .96, streets: ['עמק שרה', 'רמות', 'נווה זאב', 'הקריה', 'בית יציב', 'שכונה ד׳'] },
+  'עפולה': { f: .95, streets: ['עפולה עילית', 'מרכז', 'אזור תעשייה', 'גבעת המורה', 'יזרעאל', 'שדרות'] },
+  'ראשון לציון': { f: 1.01, streets: ['הזהב', 'רוטשילד', 'נחלת יהודה', 'קניון הזהב', 'מערב', 'רמת אליהו'] },
+};
+const PRODUCTS = [
+  { id: 'flour', name: 'קמח לבן', brand: 'סוגת', pack: 1000, unit: 'g', base: 6.9, icon: 'wheat', color: '--n-sand', code: '7290000066318' },
+  { id: 'sugar', name: 'סוכר לבן', brand: 'סוגת', pack: 1000, unit: 'g', base: 6.5, icon: 'cube', color: '--n-sky', code: '7290000066110' },
+  { id: 'brown', name: 'סוכר חום דמררה', brand: 'סוגת', pack: 1000, unit: 'g', base: 12.9, icon: 'cube', color: '--n-peach', code: '7290000066271' },
+  { id: 'butter', name: 'חמאה', brand: 'תנובה', pack: 200, unit: 'g', base: 9.9, icon: 'butter', color: '--n-butter', code: '7290004127329' },
+  { id: 'eggs', name: 'ביצים L', brand: '12 יח׳', pack: 12, unit: 'u', base: 13.6, icon: 'egg', color: '--n-sage', code: '7290000441016' },
+  { id: 'choc', name: 'שוקולד צ׳יפס מריר', brand: 'כרמית', pack: 200, unit: 'g', base: 14.9, icon: 'bar', color: '--n-rose', code: '7290000171005' },
+  { id: 'cocoa', name: 'אבקת קקאו', brand: 'עלית', pack: 200, unit: 'g', base: 16.9, icon: 'bar', color: '--n-lilac', code: '7290000123011' },
+  { id: 'oats', name: 'שיבולת שועל', brand: 'קוואקר', pack: 500, unit: 'g', base: 11.5, icon: 'wheat', color: '--n-mint', code: '7290000276052' },
+  { id: 'vanilla', name: 'תמצית וניל', brand: 'מאסטר שף', pack: 50, unit: 'ml', base: 9.9, icon: 'drop', color: '--n-butter', code: '7290011498016' },
+  { id: 'bp', name: 'אבקת אפייה', brand: 'מאסטר שף', pack: 100, unit: 'g', base: 4.5, icon: 'cube', color: '--n-sand', code: '7290011498115' },
+];
+const RECIPES = [
+  { id: 'cc', name: 'עוגיות שוקולד צ׳יפס', cat: 'עוגיות', yield: 24, word: 'עוגיות', time: '35 דק׳', color: '--n-peach', dough: 0, chips: 9,
+    ing: [['flour', 280], ['butter', 200], ['brown', 150], ['sugar', 60], ['eggs', 2], ['choc', 200], ['vanilla', 5], ['bp', 6]],
+    pack: .35, gas: 6, labor: 30, sell: 4.5, notes: 'לקרר את הבצק שעה לפחות. להוציא מהתנור כשהמרכז עוד רך — הן ממשיכות להתייצב על המגש.' },
+  { id: 'oat', name: 'עוגיות שיבולת שועל', cat: 'עוגיות', yield: 30, word: 'עוגיות', time: '30 דק׳', color: '--n-sage', dough: 1, chips: 4,
+    ing: [['oats', 250], ['flour', 120], ['butter', 150], ['brown', 140], ['eggs', 1], ['vanilla', 5], ['bp', 4]],
+    pack: .3, gas: 6, labor: 25, sell: 3.5, notes: 'אפשר להחליף חצי מהחמאה בשמן קוקוס.' },
+  { id: 'brownie', name: 'בראוניז', cat: 'עוגות', yield: 16, word: 'ריבועים', time: '45 דק׳', color: '--n-lilac', dough: 2, chips: 6,
+    ing: [['choc', 200], ['butter', 200], ['sugar', 250], ['eggs', 4], ['flour', 120], ['cocoa', 30], ['vanilla', 5]],
+    pack: .45, gas: 7, labor: 30, sell: 8, notes: 'תבנית 24×24. 22 דקות ב-175° — לא יותר.' },
+  { id: 'shortbread', name: 'עוגיות חמאה', cat: 'עוגיות', yield: 36, word: 'עוגיות', time: '40 דק׳', color: '--n-butter', dough: 3, chips: 0,
+    ing: [['butter', 250], ['flour', 375], ['sugar', 125], ['eggs', 1], ['vanilla', 5]],
+    pack: .25, gas: 5, labor: 25, sell: 2.5, notes: '' },
+];
+
+/* ---------------------------------------------------------------- state */
+const store = { get(k, d) { try { const v = localStorage.getItem('cbm.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('cbm.' + k, JSON.stringify(v)); } catch (e) {} } };
+const S = {
+  city: store.get('city', 'תל אביב'), favs: new Set(store.get('favs', ['butter', 'choc', 'eggs'])),
+  manual: store.get('manual', {}), alerts: store.get('alerts', { choc: 12.9 }),
+  theme: store.get('theme', 'system'), accent: store.get('accent', 'fire'),
+  notif: store.get('notif', { drop: true, weekly: true, enter: true, cityAuto: true, list: false, quiet: true, chains: ['rami', 'osher', 'shufersal'] }),
+  photos: {}, prodFilter: 'all', recipeCat: 'הכל', q: '',
+};
+const saveS = () => { store.set('city', S.city); store.set('favs', [...S.favs]); store.set('manual', S.manual); store.set('alerts', S.alerts); store.set('theme', S.theme); store.set('accent', S.accent); store.set('notif', S.notif); };
+function applyLook() {
+  const r = document.documentElement;
+  if (S.theme === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', S.theme);
+  r.setAttribute('data-accent', S.accent);
+}
+applyLook();
+
+/* deterministic example prices */
+function hash(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967295; }
+function offers(p, city = S.city) {
+  const C = CITIES[city];
+  return CHAINS.map((ch, i) => {
+    if (hash(city + ch.id) < .12) return null; // not every chain is in every city
+    const noise = .9 + hash(p.id + ch.id + city) * .22;
+    const price = Math.round(p.base * ch.f * C.f * noise * 10) / 10 - .01;
+    return { chain: ch, branch: C.streets[i % C.streets.length], price };
+  }).filter(Boolean).sort((a, b) => a.price - b.price);
+}
+const prod = id => PRODUCTS.find(p => p.id === id);
+const unitPrice = p => S.manual[p.id] ?? offers(p)[0].price;
+const ils = (n, d = 2) => `<bdi>₪${n.toFixed(d)}</bdi>`;
+const qty = (q, unit) => unit === 'u' ? `${+q.toFixed(1)} יח׳` : unit === 'ml' ? `${Math.round(q)} מ״ל` : q >= 1000 ? `${+(q/1000).toFixed(2)} ק״ג` : `${Math.round(q)} ג׳`;
+const sizeLabel = p => `${p.brand} · ${qty(p.pack, p.unit)}`;
+
+/* costing — the one function the Kotlin app will mirror */
+function costing(r, units) {
+  const f = units / r.yield;
+  const rows = r.ing.map(([id, q]) => { const p = prod(id); const qq = q * f; return { p, q: qq, cost: qq / p.pack * unitPrice(p) }; });
+  const ingredients = rows.reduce((s, x) => s + x.cost, 0);
+  const pack = r.pack * units, gas = ingredients * r.gas / 100, labor = r.labor * f;
+  const total = ingredients + pack + gas + labor;
+  return { rows, ingredients, pack, gas, labor, total, perUnit: total / units };
+}
+
+/* cookie art — seeded per recipe */
+function cookieSVG(r, size = 120) {
+  const looks = [['var(--dough-a)', 'var(--dough-b)'], ['#D9B47A', '#B48A4E'], ['#5B3A26', '#3E2416'], ['#F2D8A0', '#DDB874']];
+  const [a, b] = looks[r.dough];
+  let seed = Math.floor(hash(r.id) * 1e9);
+  const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  let path = ''; for (let i = 0; i <= 28; i++) { const t = i / 28 * 6.283, rr = 52 + (rnd() - .5) * 5; path += (i ? 'L' : 'M') + (60 + Math.cos(t)*rr).toFixed(1) + ' ' + (60 + Math.sin(t)*rr).toFixed(1); }
+  let chips = ''; for (let i = 0; i < r.chips; i++) {
+    const ang = rnd() * 6.283, rad = 8 + rnd() * 34, x = 60 + Math.cos(ang)*rad, y = 60 + Math.sin(ang)*rad;
+    chips += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${(4 + rnd()*3).toFixed(1)}" ry="${(3.2 + rnd()*2.4).toFixed(1)}" style="fill:var(--chip)" transform="rotate(${Math.round(rnd()*90)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+  }
+  let crumbs = ''; if (r.dough !== 2) for (let i = 0; i < 7; i++) crumbs += `<circle cx="${(28 + rnd()*64).toFixed(1)}" cy="${(28 + rnd()*64).toFixed(1)}" r="1.3" style="fill:${b}" opacity=".7"/>`;
+  return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" aria-hidden="true"><defs><radialGradient id="g${r.id}" cx="40%" cy="35%" r="70%"><stop offset="0" style="stop-color:${a}"/><stop offset="1" style="stop-color:${b}"/></radialGradient></defs><path d="${path}Z" fill="url(#g${r.id})"/>${crumbs}${chips}</svg>`;
+}
+const art = r => S.photos[r.id] ? `<img src="${S.photos[r.id]}" alt="">` : cookieSVG(r);
+
+/* ---------------------------------------------------------------- tabs: one glide spring drives panes, titles and the bar */
+const panes = [p0, p1], tabs = [...document.querySelectorAll('.tab')];
+let tabT = 0;
+const tabSpring = new Spring(0, t => {
+  tabT = t; const w = 100;
+  panes[0].style.transform = `translateX(${t * w}%)`;
+  panes[1].style.transform = `translateX(${(t - 1) * w}%)`;
+  tabs.forEach((el, i) => { const on = 1 - Math.min(1, Math.abs(t - i)); el.style.color = `color-mix(in srgb, var(--ink) ${on*100}%, var(--ink-3))`; });
+  const r0 = tabs[0].getBoundingClientRect(), r1 = tabs[1].getBoundingClientRect(), base = tabs[0].parentElement.getBoundingClientRect();
+  const off = i => base.right - [r0, r1][i].right, wid = i => [r0, r1][i].width - 24;
+  tabInd.style.transform = `translateX(${-(off(0) + (off(1) - off(0)) * t)}px)`;
+  tabInd.style.width = (wid(0) + (wid(1) - wid(0)) * t) + 'px';
+  fab.style.transform = ''; scan.hidden = t < .5;
+});
+tabs.forEach(el => el.onclick = () => { buzz(); tabSpring.to(+el.dataset.i); });
+// horizontal swipe between panes (RTL: finger to the right → next tab)
+panes.forEach(pn => {
+  let st = null;
+  pn.addEventListener('touchstart', e => { const t = e.touches[0]; st = { x: t.clientX, y: t.clientY, t0: tabT, on: null, tr: tracker() }; }, { passive: true });
+  pn.addEventListener('touchmove', e => {
+    if (!st) return; const t = e.touches[0], dx = t.clientX - st.x, dy = t.clientY - st.y;
+    if (st.on == null && Math.hypot(dx, dy) > 8) st.on = Math.abs(dx) > Math.abs(dy) * 1.3;
+    if (!st.on) return;
+    let v = st.t0 + dx / device.clientWidth; if (v < 0) v *= .25; if (v > 1) v = 1 + (v - 1) * .25;
+    st.tr.add(dx / device.clientWidth); tabSpring.set(v);
+  }, { passive: true });
+  pn.addEventListener('touchend', () => { if (!st) return; if (st.on) { const v = st.tr.vel(); let to = Math.round(tabT + v * .18); to = Math.max(0, Math.min(1, to)); if (to !== Math.round(st.t0)) buzz(); tabSpring.to(to, MOTION.glide, v); } st = null; });
+});
+
+/* ---------------------------------------------------------------- number tween on the glide spring */
+const tweens = new WeakMap();
+function tween(el, to, fmt) {
+  let s = tweens.get(el);
+  if (!s) { s = new Spring(to, v => el.innerHTML = fmt(v)); tweens.set(el, s); s.set(to); return; }
+  s.on = v => el.innerHTML = fmt(v); s.to(to);
+}
+
+/* ---------------------------------------------------------------- recipes list */
+function renderRecipes() {
+  const cats = ['הכל', ...new Set(RECIPES.map(r => r.cat))];
+  catFilters.innerHTML = cats.map(c => `<button class="filter ${c === S.recipeCat ? 'on' : ''}" data-c="${c}">${c}</button>`).join('');
+  catFilters.querySelectorAll('button').forEach(b => b.onclick = () => { S.recipeCat = b.dataset.c; renderRecipes(); });
+  const list = RECIPES.filter(r => S.recipeCat === 'הכל' || r.cat === S.recipeCat);
+  cards.innerHTML = list.map((r, i) => {
+    const c = costing(r, r.yield);
+    return `<button class="rcard sq press" data-id="${r.id}" style="background:var(${r.color});--i:${i}">
+      <div><h3>${r.name}</h3><div class="meta">${r.yield} ${r.word} · ${r.time}</div>
+      <div class="price"><b class="num">${ils(c.perUnit)}</b><span>ל${r.word === 'ריבועים' ? 'ריבוע' : 'עוגייה'}</span></div></div>
+      <div class="art">${art(r)}</div></button>`;
+  }).join('');
+  cards.querySelectorAll('.rcard').forEach(el => el.onclick = () => openRecipe(RECIPES.find(r => r.id === el.dataset.id)));
+  c0.textContent = RECIPES.length;
+  stagger(cards.children);
+}
+function stagger(nodes) {
+  if (reduce) return;
+  [...nodes].forEach((el, i) => el.animate([{ transform: 'translateY(18px)', opacity: 0 }, { transform: 'none', opacity: 1 }],
+    { duration: 520, delay: i * 45, easing: getComputedStyle(document.documentElement).getPropertyValue('--ease-glide') || 'ease-out', fill: 'backwards' }));
+}
+
+/* ---------------------------------------------------------------- products list */
+function renderProducts(animate = true) {
+  cityBtn.innerHTML = `${ic('pin')}<span>${S.city}</span>`;
+  const q = S.q.trim();
+  const list = PRODUCTS.filter(p => (S.prodFilter === 'all' || S.favs.has(p.id)) && (!q || p.name.includes(q) || p.code.includes(q) || p.brand.includes(q)));
+  if (!list.length) {
+    plist.innerHTML = S.prodFilter === 'fav' && !q
+      ? `<div class="empty"><b>אין עדיין מועדפים</b>סמנו כוכב במוצר כדי לראות אותו כאן, ולקבל התראה כשהמחיר יורד.</div>`
+      : `<div class="empty"><b>לא נמצא מוצר</b>נסו שם אחר, או סרקו את הברקוד.</div>`;
+  } else {
+    plist.innerHTML = `<div class="plist">${list.map(p => {
+      const o = offers(p)[0], man = S.manual[p.id] != null;
+      return `<button class="prow press" data-id="${p.id}">
+        <span class="pic sq" style="background:var(${p.color})">${ic(p.icon)}</span>
+        <span><span class="nm">${p.name}${S.favs.has(p.id) ? ic('star', 1) : ''}</span><span class="sz">${sizeLabel(p)}</span></span>
+        <span class="pr"><b class="num">${ils(unitPrice(p))}</b><small>${man ? '<span class="tag muted">ידני</span>' : o.chain.name}</small></span></button>`;
+    }).join('')}</div>`;
+    plist.querySelectorAll('.prow').forEach(el => el.onclick = () => openProduct(prod(el.dataset.id)));
+    if (animate) stagger(plist.querySelector('.plist').children);
+  }
+  c1.textContent = PRODUCTS.length;
+}
+prodFilters.querySelectorAll('button').forEach(b => b.onclick = () => {
+  S.prodFilter = b.dataset.f; prodFilters.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderProducts();
+});
+searchIcon.innerHTML = ic('search');
+q.oninput = () => { S.q = q.value; renderProducts(false); };
+cityBtn.onclick = () => openCity();
+
+/* ---------------------------------------------------------------- sheets: glide in, drag to dismiss (velocity carried) */
+const stackOfSheets = [];
+function sheet(html, { onClose } = {}) {
+  const scrim = document.createElement('div'); scrim.className = 'scrim';
+  const el = document.createElement('div'); el.className = 'sheet'; el.setAttribute('role', 'dialog');
+  el.innerHTML = `<div class="grab"></div><div class="body">${html}</div>`;
+  device.append(scrim, el);
+  const z = 20 + stackOfSheets.length * 2; scrim.style.zIndex = z; el.style.zIndex = z + 1;
+  const h = () => el.offsetHeight;
+  const s = new Spring(1, v => { el.style.transform = `translateY(${v * 100}%)`; scrim.style.opacity = 1 - v; });
+  s.set(1); s.to(0);
+  const api = { el, body: el.querySelector('.body'), close };
+  stackOfSheets.push(api);
+  let closing = false;
+  async function close(vel) { if (closing) return; closing = true; stackOfSheets.splice(stackOfSheets.indexOf(api), 1); scrim.style.pointerEvents = 'none'; await s.to(1, MOTION.glide, vel); el.remove(); scrim.remove(); onClose && onClose(); }
+  scrim.onclick = () => close();
+  // drag: from the grab handle anywhere, or from the body when scrolled to top
+  let st = null; const body = api.body;
+  const down = (y, fromBody) => { if (fromBody && body.scrollTop > 0) return; st = { y, armed: !fromBody, tr: tracker() }; };
+  const move = (y, e) => { if (!st) return; const dy = y - st.y; if (!st.armed) { if (dy > 6 && body.scrollTop <= 0) { st.armed = true; st.y = y; } else if (dy < -4) { st = null; } return; }
+    e && e.cancelable && e.preventDefault(); const v = Math.max(-.02, (y - st.y) / h()); st.tr.add(v); s.set(v < 0 ? v * .3 : v); };
+  const up = () => { if (!st) return; if (st.armed) { const v = st.tr.vel(); if (s.v > .28 || v > 1.2) close(v); else s.to(0, MOTION.touch, v); } st = null; };
+  el.querySelector('.grab').addEventListener('pointerdown', e => { e.target.setPointerCapture(e.pointerId); down(e.clientY, false); });
+  el.querySelector('.grab').addEventListener('pointermove', e => move(e.clientY));
+  el.querySelector('.grab').addEventListener('pointerup', up);
+  body.addEventListener('touchstart', e => down(e.touches[0].clientY, true), { passive: true });
+  body.addEventListener('touchmove', e => move(e.touches[0].clientY, e), { passive: false });
+  body.addEventListener('touchend', up);
+  return api;
+}
+addEventListener('keydown', e => { if (e.key === 'Escape' && stackOfSheets.length) stackOfSheets[stackOfSheets.length - 1].close(); });
+
+function segmented(container, values, current, onPick) {
+  container.innerHTML = `<span class="thumb"></span>` + values.map(([v, l]) => `<button data-v="${v}">${l}</button>`).join('');
+  const th = container.querySelector('.thumb'), btns = [...container.querySelectorAll('button')];
+  let pos = null;
+  const sp = new Spring(0, v => { const a = btns[Math.floor(v)], b = btns[Math.min(btns.length - 1, Math.ceil(v))], f = v - Math.floor(v);
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(), rc = container.getBoundingClientRect();
+    const left = ra.left + (rb.left - ra.left) * f - rc.left, w = ra.width + (rb.width - ra.width) * f;
+    th.style.left = left + 'px'; th.style.width = w + 'px'; });
+  function set(v, anim) { const i = values.findIndex(x => String(x[0]) === String(v)); btns.forEach((b, j) => b.classList.toggle('on', j === i));
+    if (i < 0) { th.style.opacity = 0; return; } th.style.opacity = 1; if (anim && pos != null) sp.to(i, MOTION.touch); else sp.set(i); pos = i; }
+  btns.forEach(b => b.onclick = () => { buzz(); set(b.dataset.v, true); onPick(b.dataset.v); });
+  requestAnimationFrame(() => set(current, false));
+  return { set };
+}
+
+/* ---------------------------------------------------------------- recipe sheet */
+function openRecipe(r) {
+  let units = r.yield, sell = r.sell, photoIdx = 0;
+  const sh = sheet(`
+    <div class="hero"><div class="bgc sq" style="background:var(${r.color})"></div>
+      <div class="art" id="rArt">${art(r)}</div>
+      <div class="dots" id="rDots"></div>
+      <label class="cam press" aria-label="העלאת תמונה">${ic('camera')}<input type="file" accept="image/*" id="rFile" hidden></label></div>
+    <h2>${r.name}</h2><div class="sub">${r.cat} · ${r.time}</div>
+
+    <div class="section"><div class="label">כמות</div>
+      <div class="box">
+        <div class="yield"><button class="round press" id="yMinus" aria-label="פחות">${ic('minus')}</button>
+          <div><div class="big num" id="yBig"></div><div class="unit">${r.word} · גררו למעלה או למטה</div></div>
+          <button class="round press" id="yPlus" aria-label="יותר">${ic('plus')}</button></div>
+        <div class="seg" id="mult"></div>
+      </div></div>
+
+    <div class="section"><div class="label"><span>מרכיבים</span><span class="num" id="ingSum"></span></div>
+      <div class="box" id="ings"></div></div>
+
+    <div class="section"><div class="label">תמחיר · ${S.city}</div>
+      <div class="cost">
+        <div class="line"><span class="k">מרכיבים</span><span class="v num" id="cIng"></span></div>
+        <div class="line"><span class="k">אריזה<small>לכל יחידה</small></span><span class="v"><span class="mini"><button id="pkM" aria-label="פחות">${ic('minus')}</button><span class="num" id="pkV"></span><button id="pkP" aria-label="יותר">${ic('plus')}</button></span></span></div>
+        <div class="line"><span class="k">גז וחשמל<small>אחוז מהמרכיבים</small></span><span class="v"><span class="mini"><button id="gsM" aria-label="פחות">${ic('minus')}</button><span class="num" id="gsV"></span><button id="gsP" aria-label="יותר">${ic('plus')}</button></span></span></div>
+        <div class="line"><span class="k">עבודה<small>למגש של ${r.yield}</small></span><span class="v"><span class="mini"><button id="lbM" aria-label="פחות">${ic('minus')}</button><span class="num" id="lbV"></span><button id="lbP" aria-label="יותר">${ic('plus')}</button></span></span></div>
+        <div class="total"><div><span class="lbl">ליחידה</span><b class="num" id="cUnit"></b></div>
+          <div class="side">סה״כ<br><b class="num" id="cTot"></b></div></div>
+      </div>
+      <div class="profit">
+        <div class="row"><div><div class="sub" style="font-size:13px;font-weight:700">מחיר מכירה ליחידה</div><div class="sell num" id="sellV"></div></div>
+          <span class="mini" style="background:var(--bg-2)"><button id="slM" aria-label="פחות">${ic('minus')}</button><span class="num" style="min-width:8px"></span><button id="slP" aria-label="יותר">${ic('plus')}</button></span></div>
+        <div class="bar"><i class="c1" id="barC"></i><i class="c2" id="barP"></i></div>
+        <div class="legend"><span>עלות <b class="num" id="lgC"></b></span><span>רווח <b class="num" id="lgP"></b> · <b class="num" id="lgM"></b></span></div>
+        <button class="hint" id="rec"></button>
+      </div></div>
+
+    ${r.notes ? `<div class="section"><div class="label">הערות</div><div class="notes">${r.notes}</div></div>` : ''}
+    <div class="section"><button class="btn ghost press" id="toList" style="width:100%">${''}הוספה לרשימת קניות</button></div>
+  `);
+  const $ = id => sh.el.querySelector('#' + id);
+  const mult = segmented($('mult'), [[.5, '×½'], [1, '×1'], [2, '×2'], [3, '×3']], 1, v => { units = Math.round(r.yield * +v); update(); });
+  function update() {
+    const c = costing(r, units);
+    tween($('yBig'), units, v => Math.round(v));
+    const m = units / r.yield; mult.set([.5, 1, 2, 3].includes(+m.toFixed(2)) ? m : -1, true);
+    $('ings').innerHTML = c.rows.map(x => `<button class="ing" data-id="${x.p.id}"><span class="pic sq" style="background:var(${x.p.color})">${ic(x.p.icon)}</span>
+      <span><b>${x.p.name}</b><div class="q num">${qty(x.q, x.p.unit)}</div></span><span class="c num" style="text-align:end">${ils(x.cost)}<small>${S.manual[x.p.id] != null ? 'ידני' : offers(x.p)[0].chain.name}</small></span></button>`).join('');
+    $('ings').querySelectorAll('.ing').forEach(b => b.onclick = () => openProduct(prod(b.dataset.id), () => update()));
+    $('ingSum').innerHTML = ils(c.ingredients);
+    tween($('cIng'), c.ingredients, v => ils(v));
+    $('pkV').innerHTML = ils(r.pack); $('gsV').textContent = r.gas + '%'; $('lbV').innerHTML = ils(r.labor, 0);
+    tween($('cUnit'), c.perUnit, v => ils(v)); tween($('cTot'), c.total, v => ils(v));
+    tween($('sellV'), sell, v => ils(v));
+    const profit = sell - c.perUnit, margin = profit / sell;
+    $('barC').style.cssText = `width:${Math.min(100, c.perUnit / sell * 100)}%;transition:width var(--dur-glide) var(--ease-glide)`;
+    $('barP').style.cssText = `width:${Math.max(0, profit / sell * 100)}%;transition:width var(--dur-glide) var(--ease-glide)`;
+    $('lgC').innerHTML = ils(c.perUnit); $('lgP').innerHTML = ils(profit); $('lgM').textContent = Math.round(margin * 100) + '%';
+    $('lgP').style.color = profit < 0 ? 'var(--danger)' : '';
+    const rec = Math.ceil(c.perUnit / (1 - .6) * 2) / 2;
+    $('rec').innerHTML = `למרווח של 60% — מחיר מומלץ <u>${ils(rec)}</u>`; $('rec').onclick = () => { sell = rec; buzz(); update(); };
+  }
+  const step = (id, fn) => $(id).onclick = () => { buzz(); fn(); update(); };
+  step('yMinus', () => units = Math.max(1, units - 1)); step('yPlus', () => units++);
+  step('pkM', () => r.pack = Math.max(0, +(r.pack - .05).toFixed(2))); step('pkP', () => r.pack = +(r.pack + .05).toFixed(2));
+  step('gsM', () => r.gas = Math.max(0, r.gas - 1)); step('gsP', () => r.gas++);
+  step('lbM', () => r.labor = Math.max(0, r.labor - 5)); step('lbP', () => r.labor += 5);
+  step('slM', () => sell = Math.max(.5, +(sell - .5).toFixed(2))); step('slP', () => sell = +(sell + .5).toFixed(2));
+  // drag the giant number: 14px per unit, a tick on each
+  const big = $('yBig'); let dr = null;
+  big.addEventListener('pointerdown', e => { big.setPointerCapture(e.pointerId); dr = { y: e.clientY, u: units }; });
+  big.addEventListener('pointermove', e => { if (!dr) return; const n = Math.max(1, dr.u + Math.round((dr.y - e.clientY) / 14)); if (n !== units) { units = n; buzz(); update(); } });
+  big.addEventListener('pointerup', () => dr = null);
+  // photos: upload adds to the gallery; tap the image to cycle
+  const gal = () => (S.photos[r.id + ':all'] || []);
+  function showPhotos() { const g = gal(); $('rDots').innerHTML = g.length > 1 ? g.map((_, i) => `<i class="${i === photoIdx ? 'on' : ''}"></i>`).join('') : ''; }
+  $('rFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
+    rd.onload = () => { const g = gal(); g.push(rd.result); S.photos[r.id + ':all'] = g; S.photos[r.id] = rd.result; photoIdx = g.length - 1;
+      $('rArt').innerHTML = art(r); $('rArt').animate([{ transform: 'scale(.6) rotate(-20deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 520, easing: getComputedStyle(document.documentElement).getPropertyValue('--ease-touch') });
+      showPhotos(); renderRecipes(); toast('התמונה נוספה'); }; rd.readAsDataURL(f); };
+  $('rArt').onclick = () => { const g = gal(); if (g.length < 2) return; photoIdx = (photoIdx + 1) % g.length; S.photos[r.id] = g[photoIdx]; $('rArt').innerHTML = art(r); showPhotos(); };
+  $('toList').onclick = () => { buzz(); toast(`${units} ${r.word} נוספו לרשימה`); };
+  update();
+}
+
+/* ---------------------------------------------------------------- product sheet */
+function openProduct(p, after) {
+  const sh = sheet(`
+    <div class="phead"><span class="pic sq" style="background:var(${p.color})">${ic(p.icon)}</span>
+      <div><h2 style="font-size:calc(30px * var(--ds))">${p.name}</h2><div class="sub">${sizeLabel(p)}</div><div class="barcode">${p.code}</div></div>
+      <button class="star press" id="fav" aria-label="מועדף"></button></div>
+
+    <div class="section"><div class="label"><span>מחירים ב${S.city} · מהזול ליקר</span><button class="city-btn press" id="pCity" style="padding:6px 10px">${ic('pin')}<span>החלפה</span></button></div>
+      <div class="box" id="offers"></div>
+      <div class="proto-note" style="margin-top:8px;text-align:start;padding-inline:4px">עודכן היום 06:10 · מקבצי שקיפות המחירים</div></div>
+
+    <div class="section"><div class="label">המחיר שלי</div>
+      <div class="box" style="padding:14px 16px">
+        <div class="manual"><label class="field">₪<input id="man" inputmode="decimal" placeholder="${offers(p)[0].price.toFixed(2)}"></label>
+          <button class="btn press" id="manSave">שמירה</button></div>
+        <div class="sub" id="manHint" style="font-size:13.5px;margin-top:10px"></div>
+      </div></div>
+
+    <div class="section"><div class="label">התראת ירידת מחיר</div>
+      <div class="box">
+        <div class="line"><span class="k">להתריע כשהמחיר יורד<small>בכל רשת ב${S.city}</small></span><button class="sw" id="alSw" aria-label="התראה"></button></div>
+        <div class="line" id="alRow"><span class="k">מתחת ל־</span><span class="v"><span class="mini" style="background:var(--bg-2)"><button id="alM" aria-label="פחות">${ic('minus')}</button><span class="num" id="alV"></span><button id="alP" aria-label="יותר">${ic('plus')}</button></span></span></div>
+      </div></div>
+
+    <div class="section"><div class="label">משמש ב־</div><div class="box" id="usedIn"></div></div>
+  `, { onClose: () => { renderProducts(false); renderRecipes(); after && after(); } });
+  const $ = id => sh.el.querySelector('#' + id);
+  function draw(anim) {
+    const os = offers(p), max = os[os.length - 1].price;
+    const before = new Map([...$('offers').children].map(n => [n.dataset.c, n.getBoundingClientRect().top]));
+    $('offers').innerHTML = os.map((o, i) => `<div class="offer ${i === 0 ? 'best' : ''}" data-c="${o.chain.id}">
+      <span class="ch">${o.chain.name} ${i === 0 ? '<span class="tag">הכי זול</span>' : ''}</span>
+      <span class="p num">${ils(o.price)}</span><span class="br">${o.branch}</span>
+      <span class="meter"><i style="width:${(o.price / max * 100).toFixed(1)}%"></i></span></div>`).join('');
+    if (anim && !reduce) [...$('offers').children].forEach(n => { const b = before.get(n.dataset.c); const now = n.getBoundingClientRect().top;
+      if (b != null) { const sp = new Spring(b - now, v => n.style.transform = `translateY(${v}px)`); sp.set(b - now); sp.to(0); }
+      else n.animate([{ opacity: 0 }, { opacity: 1 }], 300); });
+    const m = S.manual[p.id];
+    $('man').value = m != null ? m.toFixed(2) : '';
+    $('manHint').innerHTML = m != null ? `המחיר הידני גובר על המחיר מהרשתות. <button style="color:var(--accent);font-weight:800" id="manClr">חזרה למחיר הזול</button>` : `ריק — המתכונים מחושבים לפי המחיר הזול ב${S.city} (${ils(os[0].price)}).`;
+    const clr = $('manClr'); if (clr) clr.onclick = () => { delete S.manual[p.id]; saveS(); buzz(); draw(); toast('חזרה למחיר מהרשתות'); };
+    $('fav').innerHTML = ic('star', S.favs.has(p.id)); $('fav').classList.toggle('on', S.favs.has(p.id));
+    const al = S.alerts[p.id]; $('alSw').classList.toggle('on', al != null); $('alRow').style.opacity = al != null ? 1 : .4;
+    $('alV').innerHTML = ils(al ?? Math.floor(os[0].price) - .1);
+    const used = RECIPES.filter(r => r.ing.some(([id]) => id === p.id));
+    $('usedIn').innerHTML = used.length ? used.map(r => `<div class="line"><span class="k">${r.name}</span><span class="v sub">${qty(r.ing.find(([id]) => id === p.id)[1], p.unit)}</span></div>`).join('') : `<div class="line"><span class="sub">עדיין לא בשום מתכון</span></div>`;
+  }
+  $('fav').onclick = () => { buzz(); S.favs.has(p.id) ? S.favs.delete(p.id) : S.favs.add(p.id); saveS(); draw(); toast(S.favs.has(p.id) ? 'נוסף למועדפים' : 'הוסר מהמועדפים'); };
+  $('manSave').onclick = () => { const v = parseFloat($('man').value.replace(',', '.')); if (!(v > 0)) { $('man').focus(); toast('הקלידו מחיר, למשל 12.90'); return; } S.manual[p.id] = v; saveS(); buzz(); draw(); toast('המחיר הידני נשמר'); };
+  $('alSw').onclick = () => { buzz(); if (S.alerts[p.id] != null) delete S.alerts[p.id]; else S.alerts[p.id] = Math.floor(offers(p)[0].price) - .1; saveS(); draw(); };
+  const al = d => () => { if (S.alerts[p.id] == null) return; buzz(); S.alerts[p.id] = Math.max(.9, +(S.alerts[p.id] + d).toFixed(2)); saveS(); draw(); };
+  $('alM').onclick = al(-.5); $('alP').onclick = al(.5);
+  $('pCity').onclick = () => openCity(() => { draw(true); sh.el.querySelector('.section .label span').textContent = `מחירים ב${S.city} · מהזול ליקר`; });
+  draw();
+}
+
+/* ---------------------------------------------------------------- city picker */
+function openCity(after) {
+  const sh = sheet(`<h2>עיר</h2><div class="sub">המחירים מסודרים לפי הסניפים בעיר שבחרתם.</div>
+    <div class="section"><div class="box cities">${Object.keys(CITIES).map(c => `<button class="city press" data-c="${c}"><span>${c}<br><small>${offers(PRODUCTS[0], c).length} רשתות</small></span>${c === S.city ? ic('check') : ''}</button>`).join('')}</div></div>`);
+  sh.el.querySelectorAll('.city').forEach(b => b.onclick = () => { S.city = b.dataset.c; saveS(); buzz(); renderProducts(); renderRecipes(); sh.close(); after && after(); toast(`מחירים ב${S.city}`); });
+}
+
+/* ---------------------------------------------------------------- settings + notifications */
+function openSettings() {
+  const N = S.notif;
+  const sh = sheet(`<h2>הגדרות</h2>
+    <div class="section"><div class="label">מראה</div><div class="box" style="padding:12px 14px">
+      <div class="seg" id="theme" style="margin:0"></div>
+      <div class="sw-row" id="acc"></div></div></div>
+
+    <div class="section"><div class="label">התראות · מחירים</div><div class="box">
+      <div class="line"><span class="k">ירידת מחיר<small>למוצרים שהגדרתם להם סף</small></span><button class="sw" data-n="drop"></button></div>
+      <div class="line"><span class="k">סיכום מחירים שבועי<small>ביום חמישי, 18:00</small></span><button class="sw" data-n="weekly"></button></div></div></div>
+
+    <div class="section"><div class="label">התראות · מיקום</div><div class="box">
+      <div class="line"><span class="k">כשנכנסים לסופר<small>רשימת הקניות והמבצעים בסניף</small></span><button class="sw" data-n="enter"></button></div>
+      <div id="chainsWrap"><div class="sub" style="font-size:13px;padding-top:4px">באילו רשתות</div><div class="chips" id="chains"></div></div>
+      <div class="line"><span class="k">לפי עיר<small>להחליף את עיר המחירים כשמגיעים לעיר אחרת</small></span><button class="sw" data-n="cityAuto"></button></div></div></div>
+
+    <div class="section"><div class="label">התראות · זמנים</div><div class="box">
+      <div class="line"><span class="k">תזכורת לרשימת קניות<small>יום שישי, 09:00</small></span><button class="sw" data-n="list"></button></div>
+      <div class="line"><span class="k">שעות שקטות<small>22:00–07:00, בלי צליל ורטט</small></span><button class="sw" data-n="quiet"></button></div></div></div>
+
+    <div class="proto-note">אב-טיפוס · כל המחירים והסניפים כאן הם נתונים לדוגמה</div>`);
+  const $ = s => sh.el.querySelector(s);
+  segmented($('#theme'), [['system', 'מערכת'], ['light', 'בהיר'], ['dark', 'כהה']], S.theme, v => { S.theme = v; saveS(); applyLook(); });
+  const accs = [['fire', '#E0542C'], ['forest', '#1E7552'], ['ink', '#3442CF'], ['plum', '#8E3AB3']];
+  const drawAcc = () => $('#acc').innerHTML = accs.map(([k, c]) => `<button class="swatch sq press ${S.accent === k ? 'on' : ''}" data-a="${k}" style="background:${c}" aria-label="${k}"></button>`).join('');
+  drawAcc(); $('#acc').onclick = e => { const b = e.target.closest('[data-a]'); if (!b) return; buzz(); S.accent = b.dataset.a; saveS(); applyLook(); drawAcc(); };
+  const drawN = () => { sh.el.querySelectorAll('.sw[data-n]').forEach(s => s.classList.toggle('on', !!N[s.dataset.n]));
+    $('#chainsWrap').style.display = N.enter ? '' : 'none';
+    $('#chains').innerHTML = CHAINS.map(c => `<button class="chip press ${N.chains.includes(c.id) ? 'on' : ''}" data-c="${c.id}">${c.name}</button>`).join(''); };
+  sh.el.querySelectorAll('.sw[data-n]').forEach(s => s.onclick = () => { buzz(); N[s.dataset.n] = !N[s.dataset.n]; saveS(); drawN();
+    if (s.dataset.n === 'enter' && N.enter) toast('באפליקציה: בקשת הרשאת מיקום "תמיד"'); });
+  $('#chains').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; buzz(); const i = N.chains.indexOf(b.dataset.c); i < 0 ? N.chains.push(b.dataset.c) : N.chains.splice(i, 1); saveS(); drawN(); };
+  drawN();
+}
+avatar.onclick = () => { buzz(); openSettings(); };
+
+/* ---------------------------------------------------------------- add / scan */
+fab.innerHTML = ic('plus'); scan.innerHTML = ic('scan');
+fab.onclick = () => { buzz(); toast(tabT < .5 ? 'מתכון חדש — בשלב 5' : 'מוצר חדש — בשלב 3'); };
+scan.onclick = () => { buzz(); const p = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)]; toast(`נסרק: ${p.name}`); setTimeout(() => openProduct(p), 500); };
+
+let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1900); }
+
+renderRecipes(); renderProducts();
+requestAnimationFrame(() => tabSpring.set(0));
+addEventListener('resize', () => tabSpring.set(tabT));
+</script>
