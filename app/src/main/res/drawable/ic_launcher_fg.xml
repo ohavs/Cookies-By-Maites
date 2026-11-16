@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- cookie: dough disc with ink outline and choc chips -->
+    <path android:fillColor="#E7B36C" android:strokeColor="#17140F" android:strokeWidth="3"
+        android:pathData="M54,30a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z" />
+    <path android:fillColor="#3D2414" android:pathData="M45,43a3.5,3.5 0,1 1,0 7a3.5,3.5 0,1 1,0 -7z" />
+    <path android:fillColor="#3D2414" android:pathData="M62,40a3,3 0,1 1,0 6a3,3 0,1 1,0 -6z" />
+    <path android:fillColor="#3D2414" android:pathData="M58,55a4,4 0,1 1,0 8a4,4 0,1 1,0 -8z" />
+    <path android:fillColor="#3D2414" android:pathData="M44,60a3,3 0,1 1,0 6a3,3 0,1 1,0 -6z" />
+    <path android:fillColor="#3D2414" android:pathData="M67,62a2.5,2.5 0,1 1,0 5a2.5,2.5 0,1 1,0 -5z" />
+</vector>

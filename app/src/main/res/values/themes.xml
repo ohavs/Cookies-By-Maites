@@ -1,0 +1,9 @@
+<resources>
+    <color name="bg">#F6F5F1</color>
+    <color name="launcher_bg">#F08A24</color>
+    <style name="Theme.Cookies" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
