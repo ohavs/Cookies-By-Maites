@@ -132,7 +132,7 @@ fun ProductsScreen(app: CookiesApp, onAdd: () -> Unit, onOpen: (Long) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(Space.m),
         ) {
             groups.forEach { (cat, items) ->
-                item(key = "h-${cat.name}", span = { GridItemSpan(2) }) {
+                item(key = "h-${cat.gid}", span = { GridItemSpan(2) }) {
                     Row(Modifier.padding(top = Space.s, start = 4.dp, end = 4.dp), verticalAlignment = Alignment.Bottom) {
                         Text(cat.label, style = TextStyles.title, color = c.ink, modifier = Modifier.weight(1f))
                         Text("${items.size} מוצרים", style = TextStyles.label, color = c.inkDim)
