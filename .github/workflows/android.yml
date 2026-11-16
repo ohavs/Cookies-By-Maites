@@ -31,9 +31,12 @@ jobs:
       - name: Decode keystore
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KSP: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KA: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           if [ -z "$KS" ]; then echo "::warning::No keystore secret - building without release"; exit 0; fi
-          echo "$KS" | base64 -d > "$RUNNER_TEMP/release.jks"
+          printf '%s' "$KS" | tr -d ' \r\n\t' | base64 -d > "$RUNNER_TEMP/release.jks" || { echo "::error::ANDROID_KEYSTORE_BASE64 is not valid base64"; exit 1; }
+          keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass "$KSP" -alias "$KA" >/dev/null || { echo "::error::Keystore/password/alias secrets do not match"; exit 1; }
           echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
       - name: Build signed APK
