@@ -122,12 +122,13 @@ class PriceSync(private val db: AppDb, private val prefs: Prefs, private val loc
         if (!force && st.city == city && System.currentTimeMillis() - st.at < 20 * 3600_000L) return@withContext false
         val codes = db.products().barcodes().mapNotNull(::priceKey).toSet()
         val canon = db.prices().cities().first().associateBy { LocalChains.norm(it) }
-        val status = LocalChains.LOCAL.joinToString(";") { ch ->
-            runCatching { local.fetch(ch, codes, city, canon) }.fold(
-                { r -> db.prices().replaceLocal(ch.key, r.stores, r.prices); "${ch.key}:ok:${r.stores.size}:${r.prices.size}" },
-                { e -> "${ch.key}:err:${e.javaClass.simpleName} ${e.message.orEmpty().take(80)}" },
-            )
+        val rows = ArrayList<String>()
+        for (ch in LocalChains.LOCAL) {
+            val r = runCatching { local.fetch(ch, codes, city, canon) }
+            r.getOrNull()?.let { db.prices().replaceLocal(ch.key, it.stores, it.prices) }
+            rows += r.fold({ "${ch.key}:ok:${it.stores.size}:${it.prices.size}" }, { e -> "${ch.key}:err:${e.javaClass.simpleName} ${e.message.orEmpty().replace(':', ' ').replace(';', ' ').take(80)}" })
         }
+        val status = rows.joinToString(";")
         prefs.setLocalState(LocalState(System.currentTimeMillis(), city, status))
         true
     }
