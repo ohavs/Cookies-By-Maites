@@ -2,862 +2,834 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Karantina:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap">
 <style>
-/* Layout: a phone-sized app (full screen on phones, framed on desktop). Two giant tabs on top, one task per screen, everything else in sheets.
-   Tokens are Noted's, 1:1 — every component reads only from them. */
+/* Layout: a phone app — app bar, one scrolling screen, white bottom bar with a raised + in the middle.
+   Pushed pages slide in over the tabs; every choice happens in a bottom sheet. Sticker style: flat fills, ink outlines. */
 :root {
-  --bg: #F5F1EA; --bg-2: #EDE7DD; --surface: #FFFDF9;
-  --ink: #1B1915; --ink-2: #6B655C; --ink-3: #A69F94;
-  --line: rgba(27,25,21,.09); --scrim: rgba(30,26,20,.28);
-  --inverse: #1C1A17; --inverse-2: #2A2723; --inverse-ink: #F6F2EA; --inverse-ink-2: #9C958A;
-  --danger: #D8402F; --danger-soft: #FBE1DC;
-  --good: #1E7552; --good-soft: #D3EADF;
-  --shadow-card: 0 -1px 0 rgba(255,255,255,.55) inset, 0 -10px 28px -18px rgba(40,30,10,.38);
-  --shadow-float: 0 18px 50px -18px rgba(30,20,5,.45), 0 2px 8px rgba(30,20,5,.08);
-  --n-butter: #FAE5A0; --n-peach: #F9CFB6; --n-rose: #F5C6D2; --n-lilac: #DACDF6;
-  --n-sky: #C4DDF5; --n-mint: #C6EAD5; --n-sage: #DBE4C0; --n-sand: #ECE1D2;
-  --note-ink: #1D1A15; --note-ink-2: rgba(29,26,21,.62);
-  --dough-a: #E9B872; --dough-b: #C98B45; --chip: #4A2C1A;
-  --accent: #E0542C; --accent-ink: #FFFFFF; --accent-soft: #F9DDD2;
-  --r-card: 30px; --r-lg: 26px; --r-md: 18px; --r-sm: 13px; --gutter: 16px;
-  --font-display: "Karantina", "Heebo", system-ui, sans-serif;
-  --font-body: "Heebo", system-ui, sans-serif;
-  --ds: 1.38; /* Karantina is condensed: display sizes scale up */
-  --ease-touch: cubic-bezier(.34,1.56,.64,1); --dur-touch: 420ms;
-  --ease-glide: cubic-bezier(.2,.8,.2,1); --dur-glide: 480ms;
-  --ease-out: cubic-bezier(.2,.7,.3,1); --dur-fast: 150ms;
+  --bg: #F6F5F1; --surface: #FFFFFF; --surface-2: #EFEEE9; --surface-3: #E3E1DA;
+  --ink: #17140F; --ink-dim: #625D55; --ink-faint: #A19B92;
+  --divider: rgba(23,20,15,.07); --stroke: #17140F;
+  --accent: #F08A24; --accent-fg: #17140F; --accent-ink: #B5560A; --accent-soft: #FDEBD8;
+  --good: #1F9D57; --good-soft: #E2F3E9; --danger: #D92D20; --danger-soft: #FDECEC;
+  --t-butter: #FFF3C9; --t-peach: #FFE6D6; --t-mint: #E0F2E7; --t-sky: #E3EEFF; --t-lav: #ECE9FF; --t-rose: #FDE3EA;
+  --dough-a: #E7B36C; --dough-b: #C2853F; --chip: #3D2414;
+  --shadow-card: 0 1px 2px rgba(23,20,15,.04), 0 8px 24px rgba(23,20,15,.05);
+  --shadow-float: 0 14px 34px -12px rgba(23,20,15,.28);
+  --font: "Rubik", system-ui, -apple-system, sans-serif;
+  --ease-out: cubic-bezier(.22,1,.36,1); --ease-spring: cubic-bezier(.34,1.56,.64,1);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #12110F; --bg-2: #1A1916; --surface: #1F1D1A;
-  --ink: #F3EEE6; --ink-2: #A59E93; --ink-3: #6A645B;
-  --line: rgba(243,238,230,.09); --scrim: rgba(0,0,0,.5);
-  --inverse: #2A2824; --inverse-2: #37342F; --inverse-ink: #F6F2EA; --inverse-ink-2: #A39C90;
-  --danger: #FF6A55; --danger-soft: #3D1F1A; --good: #45C891; --good-soft: #173A2B;
-  --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 -10px 28px -16px rgba(0,0,0,.8);
-  --shadow-float: 0 18px 50px -12px rgba(0,0,0,.8);
-  --n-butter: #4A4024; --n-peach: #4C3326; --n-rose: #482C35; --n-lilac: #383150;
-  --n-sky: #27384A; --n-mint: #243D31; --n-sage: #343D28; --n-sand: #3A342D;
-  --note-ink: #F4EFE7; --note-ink-2: rgba(244,239,231,.6);
-  --dough-a: #C9984F; --dough-b: #9A6A33; --chip: #2A170C;
+  --bg: #0F0E0C; --surface: #1B1A17; --surface-2: #26241F; --surface-3: #322F29;
+  --ink: #F5F3EE; --ink-dim: #A8A298; --ink-faint: #6E685F;
+  --divider: rgba(255,255,255,.07); --stroke: #0A0908;
+  --accent-ink: #FFAE66; --accent-soft: rgba(240,138,36,.16);
+  --good: #3CC27A; --good-soft: rgba(60,194,122,.15); --danger: #FF6B5E; --danger-soft: rgba(255,107,94,.14);
+  --t-butter: rgba(242,190,40,.14); --t-peach: rgba(255,140,80,.14); --t-mint: rgba(60,194,122,.13); --t-sky: rgba(92,155,255,.14); --t-lav: rgba(130,110,255,.15); --t-rose: rgba(240,90,130,.14);
+  --dough-a: #C9984F; --dough-b: #95632C; --chip: #24130A;
+  --shadow-card: 0 1px 2px rgba(0,0,0,.35); --shadow-float: 0 14px 34px -12px rgba(0,0,0,.7);
   color-scheme: dark;
 } }
 :root[data-theme="dark"] {
-  --bg: #12110F; --bg-2: #1A1916; --surface: #1F1D1A;
-  --ink: #F3EEE6; --ink-2: #A59E93; --ink-3: #6A645B;
-  --line: rgba(243,238,230,.09); --scrim: rgba(0,0,0,.5);
-  --inverse: #2A2824; --inverse-2: #37342F; --inverse-ink: #F6F2EA; --inverse-ink-2: #A39C90;
-  --danger: #FF6A55; --danger-soft: #3D1F1A; --good: #45C891; --good-soft: #173A2B;
-  --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 -10px 28px -16px rgba(0,0,0,.8);
-  --shadow-float: 0 18px 50px -12px rgba(0,0,0,.8);
-  --n-butter: #4A4024; --n-peach: #4C3326; --n-rose: #482C35; --n-lilac: #383150;
-  --n-sky: #27384A; --n-mint: #243D31; --n-sage: #343D28; --n-sand: #3A342D;
-  --note-ink: #F4EFE7; --note-ink-2: rgba(244,239,231,.6);
-  --dough-a: #C9984F; --dough-b: #9A6A33; --chip: #2A170C;
+  --bg: #0F0E0C; --surface: #1B1A17; --surface-2: #26241F; --surface-3: #322F29;
+  --ink: #F5F3EE; --ink-dim: #A8A298; --ink-faint: #6E685F;
+  --divider: rgba(255,255,255,.07); --stroke: #0A0908;
+  --accent-ink: #FFAE66; --accent-soft: rgba(240,138,36,.16);
+  --good: #3CC27A; --good-soft: rgba(60,194,122,.15); --danger: #FF6B5E; --danger-soft: rgba(255,107,94,.14);
+  --t-butter: rgba(242,190,40,.14); --t-peach: rgba(255,140,80,.14); --t-mint: rgba(60,194,122,.13); --t-sky: rgba(92,155,255,.14); --t-lav: rgba(130,110,255,.15); --t-rose: rgba(240,90,130,.14);
+  --dough-a: #C9984F; --dough-b: #95632C; --chip: #24130A;
+  --shadow-card: 0 1px 2px rgba(0,0,0,.35); --shadow-float: 0 14px 34px -12px rgba(0,0,0,.7);
   color-scheme: dark;
 }
-:root[data-accent="forest"] { --accent: #1E7552; --accent-soft: #D3EADF; }
-:root[data-accent="ink"]    { --accent: #3442CF; --accent-soft: #DDE0FA; }
-:root[data-accent="plum"]   { --accent: #8E3AB3; --accent-soft: #EBDAF3; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --accent: #FF7A4F; --accent-ink: #1B0E08; --accent-soft: #4A271B; }
-  :root:not([data-theme="light"])[data-accent="forest"] { --accent: #45C891; --accent-ink: #06170F; --accent-soft: #173A2B; }
-  :root:not([data-theme="light"])[data-accent="ink"]    { --accent: #8A95FF; --accent-ink: #0B0E2B; --accent-soft: #23284F; }
-  :root:not([data-theme="light"])[data-accent="plum"]   { --accent: #CF93F0; --accent-ink: #1E0B29; --accent-soft: #3A2348; }
-}
-:root[data-theme="dark"] { --accent: #FF7A4F; --accent-ink: #1B0E08; --accent-soft: #4A271B; }
-:root[data-theme="dark"][data-accent="forest"] { --accent: #45C891; --accent-ink: #06170F; --accent-soft: #173A2B; }
-:root[data-theme="dark"][data-accent="ink"]    { --accent: #8A95FF; --accent-ink: #0B0E2B; --accent-soft: #23284F; }
-:root[data-theme="dark"][data-accent="plum"]   { --accent: #CF93F0; --accent-ink: #1E0B29; --accent-soft: #3A2348; }
-
-@supports (corner-shape: squircle) {
-  :root { --r-card: 54px; --r-lg: 46px; --r-md: 32px; --r-sm: 24px; }
-  .sq { corner-shape: squircle; }
+:root[data-accent="pistachio"] { --accent: #3DB86B; --accent-ink: #1C7A40; --accent-soft: #E2F3E9; }
+:root[data-accent="berry"]     { --accent: #F0507E; --accent-ink: #B42350; --accent-soft: #FDE3EA; }
+:root[data-accent="blueberry"] { --accent: #6A7CFF; --accent-ink: #3A4BD6; --accent-soft: #E8EBFF; }
+:root[data-theme="dark"][data-accent="pistachio"] { --accent-ink: #6FD896; --accent-soft: rgba(61,184,107,.16); }
+:root[data-theme="dark"][data-accent="berry"]     { --accent-ink: #FF8FAE; --accent-soft: rgba(240,80,126,.16); }
+:root[data-theme="dark"][data-accent="blueberry"] { --accent-ink: #A3AEFF; --accent-soft: rgba(106,124,255,.16); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-accent="pistachio"] { --accent-ink: #6FD896; --accent-soft: rgba(61,184,107,.16); }
+  :root:not([data-theme="light"])[data-accent="berry"]     { --accent-ink: #FF8FAE; --accent-soft: rgba(240,80,126,.16); }
+  :root:not([data-theme="light"])[data-accent="blueberry"] { --accent-ink: #A3AEFF; --accent-soft: rgba(106,124,255,.16); }
 }
 
 html, body { height: 100%; }
-body {
-  background: var(--bg); color: var(--ink);
-  font-family: var(--font-body); font-size: 16px;
-  -webkit-tap-highlight-color: transparent;
-  overflow: hidden;
-}
-* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; overflow: hidden; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-input { font: inherit; color: inherit; }
+input { font: inherit; color: inherit; caret-color: var(--accent); }
+::selection { background: var(--accent-soft); }
 :focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
 .num { font-variant-numeric: tabular-nums; }
-bdi { unicode-bidi: isolate; }
+.hide-scroll { scrollbar-width: none; } .hide-scroll::-webkit-scrollbar { display: none; }
 
-#device {
-  position: relative; height: 100%; width: 100%;
-  overflow: hidden; background: var(--bg); isolation: isolate;
-}
+#device { position: relative; height: 100%; width: 100%; overflow: hidden; background: var(--bg); isolation: isolate; }
 @media (min-width: 640px) {
-  body { background: var(--bg-2); display: grid; place-items: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-  #device { width: 400px; height: min(860px, 96%); border-radius: 44px;
-    box-shadow: 0 40px 100px -30px rgba(0,0,0,.45), 0 0 0 10px var(--inverse), 0 0 0 11px rgba(0,0,0,.2); }
+  body { background: var(--surface-2); display: grid; place-items: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  #device { width: 400px; height: min(860px, 96%); border-radius: 44px; box-shadow: 0 40px 100px -30px rgba(0,0,0,.4), 0 0 0 10px var(--stroke), 0 0 0 11px rgba(0,0,0,.2); }
 }
 
-/* pressable: the touch spring on release */
-.press { transition: transform var(--dur-touch) var(--ease-touch); }
-.press:active { transform: scale(.94); transition-duration: var(--dur-fast); transition-timing-function: var(--ease-out); }
-.display { font-family: var(--font-display); font-weight: 700; line-height: 1.05; }
+/* motion vocabulary — transform/opacity only */
+.press { transition: transform .22s var(--ease-spring); }
+.press:active { transform: scale(.95); }
+.rise { animation: rise .5s var(--ease-out) backwards; }
+.pop { animation: pop .45s var(--ease-spring); }
+@keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+@keyframes pop { 0% { transform: scale(.7); } 55% { transform: scale(1.14); } 100% { transform: scale(1); } }
 
-/* ---------------------------------------------------------- top */
-.top {
-  position: absolute; inset: 0 0 auto; z-index: 5;
-  padding: max(14px, env(safe-area-inset-top)) var(--gutter) 0;
-  background: linear-gradient(var(--bg) 78%, transparent);
-}
-.top-row { display: flex; align-items: center; justify-content: space-between; height: 48px; }
-.brand { font-size: 13px; font-weight: 800; letter-spacing: .08em; color: var(--ink-2); }
-.avatar {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: conic-gradient(from 200deg, #F4B98F, #E58F6F, #C9A2E8, #F4B98F);
-  display: grid; place-items: center; color: #2A1A10;
-  font-family: var(--font-display); font-weight: 700; font-size: 24px;
-  box-shadow: 0 0 0 3px var(--bg), 0 0 0 4.5px var(--line);
-}
-.tabs { display: flex; gap: 22px; align-items: flex-start; padding-top: 4px; }
-.tab {
-  font-family: var(--font-display); font-weight: 700;
-  font-size: calc(46px * var(--ds)); line-height: 1; color: var(--ink-3);
-  display: flex; gap: 6px; align-items: flex-start;
-}
-.tab .count {
-  font-family: var(--font-body); font-weight: 700; font-size: 14px; margin-top: 12px;
-  color: var(--accent); min-width: 18px;
-}
-.tab-bar { position: relative; height: 3px; margin-top: 2px; }
-.tab-bar i { position: absolute; top: 0; height: 3px; border-radius: 3px; background: var(--ink); inset-inline-start: 0; width: 40px; }
+/* ------------------------------------------------ screens */
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  padding: max(10px, env(safe-area-inset-top)) 16px calc(110px + env(safe-area-inset-bottom, 0px)); }
+.screen[hidden] { display: none !important; }
+.appbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 60px; }
+.appbar h1 { margin: 0; font-size: 30px; font-weight: 900; letter-spacing: -.03em; }
+.appbar .sub { font-size: 13.5px; color: var(--ink-dim); font-weight: 600; }
 
-/* ---------------------------------------------------------- panes */
-.pane {
-  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
-  overscroll-behavior: contain; scrollbar-width: none;
-  padding: calc(max(14px, env(safe-area-inset-top)) + 150px) var(--gutter) 120px;
-  will-change: transform;
-}
-.pane::-webkit-scrollbar { display: none; }
+/* sticker button: ink outline + hard shadow */
+.sticker { border: 2.5px solid var(--stroke); background: var(--accent); color: var(--accent-fg); box-shadow: 0 4px 0 var(--stroke);
+  border-radius: 18px; font-weight: 800; transition: transform .15s ease, box-shadow .15s ease; }
+.sticker:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--stroke); }
+.cta { width: 100%; height: 56px; font-size: 16.5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-.subrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; color: var(--ink-2); font-size: 15px; }
-.filters { display: flex; gap: 18px; }
-.filter { font-weight: 700; font-size: 15px; color: var(--ink-3); padding: 6px 0; position: relative; transition: color var(--dur-glide) var(--ease-glide); }
-.filter.on { color: var(--ink); }
-.filter.on::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 2px; border-radius: 2px; background: var(--accent); }
-.city-btn { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--ink); padding: 8px 12px; border-radius: 999px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
-.city-btn svg { width: 16px; height: 16px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.pill.accent { background: var(--accent-soft); color: var(--accent-ink); }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill svg { width: 16px; height: 16px; }
+.citypill { height: 40px; padding: 0 14px 0 10px; background: var(--surface); box-shadow: var(--shadow-card); font-size: 14px; }
+.citypill svg { width: 22px; height: 22px; }
 
-/* recipe cards */
-.cards { display: grid; gap: 14px; }
-.rcard {
-  position: relative; display: grid; grid-template-columns: 1fr 112px; align-items: center;
-  min-height: 150px; padding: 20px 22px; border-radius: var(--r-card);
-  color: var(--note-ink); box-shadow: var(--shadow-card); text-align: start; width: 100%;
-}
-.rcard h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: calc(26px * var(--ds)); line-height: 1.02; text-wrap: balance; }
-.rcard .meta { margin-top: 6px; font-size: 14px; font-weight: 600; color: var(--note-ink-2); }
-.rcard .price { margin-top: 14px; display: flex; align-items: baseline; gap: 6px; }
-.rcard .price b { font-family: var(--font-display); font-size: calc(30px * var(--ds)); line-height: 1; }
-.rcard .price span { font-size: 13px; font-weight: 700; color: var(--note-ink-2); }
-.rcard .art { width: 124px; height: 124px; margin-inline-end: -26px; filter: drop-shadow(0 10px 14px rgba(60,30,5,.25)); }
-.rcard .art img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.search { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 16px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-card); margin: 4px 0 14px; }
+.search svg { width: 22px; height: 22px; flex: none; color: var(--ink-faint); }
+.search input { border: 0; outline: 0; background: none; width: 100%; font-size: 16px; font-weight: 500; }
+.search input::placeholder { color: var(--ink-faint); }
+.search .clr { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; flex: none; }
+.search .clr[hidden] { display: none; }
+.search .clr svg { width: 14px; height: 14px; color: var(--ink-dim); }
 
-/* product rows */
-.plist { display: grid; gap: 2px; background: var(--surface); border-radius: var(--r-lg); padding: 6px; box-shadow: 0 0 0 1px var(--line); }
-.prow { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 12px 10px; border-radius: var(--r-md); text-align: start; width: 100%; }
-.prow:hover { background: var(--bg); }
-.prow + .prow { border-top: 1px solid var(--line); border-radius: 0 0 var(--r-md) var(--r-md); }
-.pic { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; color: var(--note-ink); }
-.pic svg { width: 22px; height: 22px; }
-.prow .nm { font-weight: 700; font-size: 16.5px; display: flex; align-items: center; gap: 6px; }
-.prow .nm svg { width: 14px; height: 14px; color: var(--accent); }
-.prow .sz { font-size: 13.5px; color: var(--ink-2); font-weight: 500; margin-top: 2px; }
-.prow .pr { text-align: end; }
-.prow .pr b { font-family: var(--font-display); font-size: calc(22px * var(--ds)); line-height: 1; display: block; }
-.prow .pr small { font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
-.tag { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 2px 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); vertical-align: 1px; }
-.tag.muted { background: var(--bg-2); color: var(--ink-2); }
+.cats { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 18px; padding: 2px 16px 6px; }
+.cat { flex: none; display: flex; align-items: center; gap: 7px; height: 42px; padding: 0 14px 0 10px; border-radius: 15px; background: var(--surface); box-shadow: var(--shadow-card);
+  font-weight: 700; font-size: 14.5px; color: var(--ink-dim); transition: background .25s, color .25s; }
+.cat svg { width: 24px; height: 24px; }
+.cat.on { background: var(--ink); color: var(--bg); }
 
-.fab {
-  position: absolute; z-index: 6; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); inset-inline-end: 20px;
-  width: 64px; height: 64px; border-radius: 22px; background: var(--inverse); color: var(--inverse-ink);
-  display: grid; place-items: center; box-shadow: var(--shadow-float);
-}
-.fab svg { width: 28px; height: 28px; }
-.fab2 { inset-inline-end: 96px; width: 52px; height: 52px; border-radius: 18px; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-float), 0 0 0 1px var(--line); }
-.fab2 svg { width: 24px; height: 24px; }
+.h2 { display: flex; align-items: center; justify-content: space-between; margin: 22px 2px 10px; }
+.h2 b { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.h2 > span { font-size: 13px; color: var(--ink-dim); font-weight: 700; }
 
-/* ---------------------------------------------------------- sheets */
-.scrim { position: absolute; inset: 0; background: var(--scrim); opacity: 0; z-index: 20; }
-.sheet {
-  position: absolute; inset: auto 0 0; z-index: 21;
-  max-height: 94%; display: flex; flex-direction: column;
-  background: var(--bg); border-radius: var(--r-card) var(--r-card) 0 0;
-  box-shadow: var(--shadow-float); will-change: transform;
-}
-.sheet .grab { flex: none; height: 26px; display: grid; place-items: center; cursor: grab; touch-action: none; }
-.sheet .grab::before { content: ""; width: 42px; height: 5px; border-radius: 5px; background: var(--ink-3); opacity: .5; }
-.sheet .body { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding: 0 var(--gutter) calc(28px + env(safe-area-inset-bottom, 0px)); }
-.sheet .body::-webkit-scrollbar { display: none; }
-.sheet h2 { margin: 4px 0 2px; font-family: var(--font-display); font-weight: 700; font-size: calc(36px * var(--ds)); line-height: 1; text-wrap: balance; }
-.sheet .sub { color: var(--ink-2); font-size: 15px; font-weight: 500; }
-.section { margin-top: 26px; }
-.section > .label { font-size: 13px; font-weight: 800; color: var(--ink-2); letter-spacing: .04em; margin: 0 4px 10px; display: flex; justify-content: space-between; align-items: center; }
-.box { background: var(--surface); border-radius: var(--r-lg); box-shadow: 0 0 0 1px var(--line); padding: 6px 16px; }
-.line { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; }
-.line + .line { border-top: 1px solid var(--line); }
-.line .k { font-weight: 600; }
-.line .k small { display: block; font-size: 13px; color: var(--ink-2); font-weight: 500; }
-.line .v { font-weight: 700; text-align: end; white-space: nowrap; }
+/* recipe cards: photo first */
+.rgrid, .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rcard, .ptile { position: relative; background: var(--surface); border-radius: 24px; box-shadow: var(--shadow-card); padding: 8px 8px 12px; text-align: start; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.photo { position: relative; aspect-ratio: 1; max-width: 100%; border-radius: 18px; overflow: hidden; display: grid; place-items: center; }
+.photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo svg.art { width: 78%; height: 78%; filter: drop-shadow(0 8px 10px rgba(60,30,5,.22)); }
+.photo .badge { position: absolute; top: 8px; inset-inline-start: 8px; height: 26px; padding: 0 9px; border-radius: 9px; background: var(--surface); font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 4px; }
+.photo .badge svg { width: 13px; height: 13px; }
+.rcard .t, .ptile .t { padding: 0 6px; font-size: 15px; font-weight: 800; line-height: 1.2; text-wrap: balance; }
+.rcard .m, .ptile .m { padding: 0 6px; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.rcard .m small, .ptile .m small { font-size: 11.5px; color: var(--ink-dim); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ptile .s { padding: 0 6px; font-size: 12px; color: var(--ink-dim); font-weight: 600; margin-top: -4px; }
 
-/* recipe hero */
-.hero { position: relative; height: 210px; margin: 0 calc(var(--gutter) * -1) 6px; display: grid; place-items: center; overflow: hidden; }
-.hero .bgc { position: absolute; inset: 0 var(--gutter); border-radius: var(--r-card); }
-.hero .art { position: relative; width: 190px; height: 190px; filter: drop-shadow(0 18px 22px rgba(60,30,5,.3)); }
-.hero .art img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.hero .cam { position: absolute; bottom: 14px; inset-inline-end: calc(var(--gutter) + 14px); width: 44px; height: 44px; border-radius: 15px; background: var(--surface); display: grid; place-items: center; box-shadow: var(--shadow-float); }
-.hero .cam svg { width: 22px; height: 22px; }
-.hero .dots { position: absolute; bottom: 18px; display: flex; gap: 6px; }
-.hero .dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--note-ink); opacity: .25; transition: width var(--dur-glide) var(--ease-glide), opacity var(--dur-glide); }
-.hero .dots i.on { width: 18px; opacity: .7; }
+/* money: small sign, big digits */
+.money { display: inline-flex; align-items: baseline; gap: .06em; direction: ltr; font-variant-numeric: tabular-nums; }
+.money i { font-style: normal; font-size: .52em; font-weight: 800; }
+.money b { font-weight: 900; letter-spacing: -.045em; line-height: 1; }
 
-/* yield */
-.yield { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; text-align: center; padding: 10px 6px; }
-.round { width: 52px; height: 52px; border-radius: 18px; background: var(--bg); display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line); }
-.round svg { width: 22px; height: 22px; }
-.yield .big { font-family: var(--font-display); font-weight: 700; font-size: calc(64px * var(--ds)); line-height: .9; touch-action: none; cursor: ns-resize; user-select: none; }
-.yield .unit { font-size: 14px; font-weight: 700; color: var(--ink-2); }
-.seg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--bg-2); border-radius: 15px; padding: 4px; margin: 4px 0 10px; }
-.seg button { position: relative; z-index: 1; height: 38px; font-weight: 700; font-size: 15px; color: var(--ink-2); transition: color var(--dur-glide) var(--ease-glide); }
+/* product tiles */
+.pimg { aspect-ratio: 1.15; max-width: 100%; border-radius: 18px; background: #FFFFFF; box-shadow: 0 0 0 1px var(--divider) inset; display: grid; place-items: center; overflow: hidden; }
+.pimg img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
+.pimg svg { width: 46%; height: 46%; }
+.fav { position: absolute; top: 14px; inset-inline-end: 14px; width: 32px; height: 32px; border-radius: 11px; background: var(--surface); box-shadow: var(--shadow-card); display: grid; place-items: center; }
+.fav svg { width: 19px; height: 19px; }
+
+/* list card */
+.card { background: var(--surface); border-radius: 26px; box-shadow: var(--shadow-card); }
+.rows { padding: 4px 16px; }
+.row { display: flex; align-items: center; gap: 12px; min-height: 60px; width: 100%; text-align: start; }
+.row + .row { border-top: 1px solid var(--divider); }
+.row .grow { flex: 1; min-width: 0; }
+.ttl { font-weight: 700; font-size: 15.5px; }
+.ttl small { display: block; font-size: 13px; font-weight: 500; color: var(--ink-dim); margin-top: 1px; }
+.row .end { text-align: end; font-weight: 800; white-space: nowrap; }
+.row .end small { display: block; font-size: 12px; font-weight: 600; color: var(--ink-dim); }
+.thumb { width: 44px; height: 44px; border-radius: 14px; background: #FFFFFF; box-shadow: 0 0 0 1px var(--divider) inset; display: grid; place-items: center; overflow: hidden; flex: none; }
+.thumb img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+.thumb > svg, .thumb > span > svg { width: 26px; height: 26px; }
+.thumb svg.art { width: 80%; height: 80%; }
+.ico { width: 40px; height: 40px; border-radius: 14px; display: grid; place-items: center; flex: none; }
+.ico svg { width: 26px; height: 26px; }
+.chev { width: 18px; height: 18px; color: var(--ink-faint); flex: none; display: grid; }
+.chev svg { width: 18px; height: 18px; }
+
+/* bottom bar */
+.tabbar { position: absolute; z-index: 30; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-start; padding: 0 8px env(safe-area-inset-bottom, 0px);
+  height: calc(78px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-radius: 28px 28px 0 0; box-shadow: 0 -8px 30px rgba(23,20,15,.08);
+  transition: transform .45s var(--ease-out); }
+.tabbar.away { transform: translateY(110%); }
+.tab { flex: 1; padding-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.tab > span:first-child { display: flex; }
+.tab svg { width: 28px; height: 28px; }
+.tab .l { font-size: 12.5px; font-weight: 600; color: var(--ink-dim); }
+.tab.on .l { font-weight: 800; color: var(--ink); }
+.tab .d { width: 5px; height: 5px; border-radius: 50%; background: var(--ink); transform: scale(0); transition: transform .3s var(--ease-spring); }
+.tab.on .d { transform: scale(1); }
+.plus-wrap { flex: 1; display: flex; justify-content: center; }
+.plus { width: 64px; height: 64px; margin-top: -24px; border-radius: 50%; border-width: 3px; display: grid; place-items: center; }
+.plus svg { width: 30px; height: 30px; transition: transform .45s var(--ease-spring); }
+.plus.open svg { transform: rotate(45deg); }
+
+/* pushed page */
+.page { position: absolute; inset: 0; z-index: 40; background: var(--bg); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; will-change: transform; }
+.page .bar { position: sticky; top: 0; z-index: 3; display: flex; justify-content: space-between; padding: max(12px, env(safe-area-inset-top)) 16px 0; height: 0; }
+.rb { width: 44px; height: 44px; border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-float); display: grid; place-items: center; color: var(--ink); }
+.rb svg { width: 22px; height: 22px; }
+.hero { position: relative; height: 330px; display: grid; place-items: center; overflow: hidden; }
+.hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero svg.art { width: 230px; height: 230px; filter: drop-shadow(0 18px 24px rgba(60,30,5,.3)); }
+.hero.white { background: #FFFFFF; height: 300px; }
+.hero.white img { object-fit: contain; padding: 56px 40px 46px; }
+.sheetbody { position: relative; margin-top: -30px; background: var(--bg); border-radius: 30px 30px 0 0; padding: 22px 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
+.sheetbody h1 { margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -.03em; line-height: 1.1; text-wrap: balance; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.gallery { display: flex; gap: 8px; overflow-x: auto; margin: 16px -16px 0; padding: 4px 16px; }
+.gallery > * { flex: none; width: 64px; height: 64px; border-radius: 16px; overflow: hidden; display: grid; place-items: center; }
+.gallery button.on { box-shadow: 0 0 0 2.5px var(--ink); }
+.gallery img { width: 100%; height: 100%; object-fit: cover; }
+.gallery svg.art { width: 80%; height: 80%; }
+.gallery .add { background: var(--surface); border: 2px dashed var(--surface-3); cursor: pointer; }
+.gallery .add svg { width: 24px; height: 24px; color: var(--ink-dim); }
+
+/* stepper + segmented */
+.yield { display: flex; align-items: center; justify-content: space-between; padding: 16px; }
+.rbtn { width: 48px; height: 48px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; }
+.rbtn svg { width: 22px; height: 22px; }
+.yield .mid { text-align: center; }
+.yield .mid b { display: block; font-size: 52px; font-weight: 900; letter-spacing: -.04em; line-height: 1; }
+.yield .mid small { font-size: 13px; color: var(--ink-dim); font-weight: 700; }
+.seg { position: relative; display: flex; padding: 4px; border-radius: 16px; background: var(--surface-2); }
+.seg button { position: relative; z-index: 1; flex: 1; height: 40px; border-radius: 12px; font-weight: 800; font-size: 14.5px; color: var(--ink-dim); transition: color .25s; }
 .seg button.on { color: var(--ink); }
-.seg .thumb { position: absolute; top: 4px; bottom: 4px; border-radius: 11px; background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.seg .th { position: absolute; top: 4px; bottom: 4px; border-radius: 12px; background: var(--surface); box-shadow: 0 2px 8px rgba(23,20,15,.08); transition: left .4s var(--ease-spring), width .4s var(--ease-spring), opacity .2s; }
+.mini { display: inline-flex; align-items: center; background: var(--surface-2); border-radius: 13px; padding: 3px; flex: none; }
+.mini button { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; transition: background .15s; }
+.mini button:active { background: var(--surface); }
+.mini svg { width: 16px; height: 16px; }
+.mini span { min-width: 58px; text-align: center; font-weight: 800; font-size: 14.5px; }
 
-/* ingredients */
-.ing { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; width: 100%; text-align: start; min-height: 58px; }
-.ing + .ing { border-top: 1px solid var(--line); }
-.ing .pic { width: 36px; height: 36px; border-radius: 12px; }
-.ing .pic svg { width: 18px; height: 18px; }
-.ing .q { font-size: 13.5px; color: var(--ink-2); font-weight: 600; }
-.ing .c { font-weight: 700; }
-.ing .c small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 600; }
-
-/* costing — the one inverse surface */
-.cost { background: var(--inverse); color: var(--inverse-ink); border-radius: var(--r-card); padding: 20px 20px 18px; }
-.cost .line { min-height: 44px; }
-.cost .line + .line { border-color: rgba(255,255,255,.08); }
-.cost .k small { color: var(--inverse-ink-2); }
-.cost .v small { color: var(--inverse-ink-2); font-weight: 600; font-size: 12.5px; margin-inline-end: 6px; }
-.cost .total { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 12px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,.18); }
-.cost .total .lbl { font-size: 13px; font-weight: 700; color: var(--inverse-ink-2); }
-.cost .total b { display: block; font-family: var(--font-display); font-size: calc(44px * var(--ds)); line-height: .95; }
-.cost .total .side { text-align: end; font-size: 14px; color: var(--inverse-ink-2); font-weight: 600; }
-.cost .total .side b { font-size: calc(24px * var(--ds)); color: var(--inverse-ink); }
-.mini { display: inline-flex; align-items: center; gap: 2px; background: var(--inverse-2); border-radius: 11px; padding: 2px; }
-.mini button { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; }
-.mini button svg { width: 15px; height: 15px; }
-.mini span { min-width: 54px; text-align: center; font-weight: 700; }
-
-.profit { margin-top: 14px; background: var(--surface); border-radius: var(--r-lg); box-shadow: 0 0 0 1px var(--line); padding: 16px; }
-.profit .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.profit .sell { font-family: var(--font-display); font-weight: 700; font-size: calc(32px * var(--ds)); line-height: 1; }
-.bar { height: 12px; border-radius: 6px; background: var(--bg-2); overflow: hidden; margin: 14px 0 8px; display: flex; }
-.bar i { display: block; height: 100%; }
-.bar .c1 { background: var(--ink-3); }
-.bar .c2 { background: var(--accent); }
-.legend { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+/* costing */
+.big { padding: 18px 18px 6px; display: flex; justify-content: space-between; align-items: flex-end; }
+.lbl { font-size: 13px; font-weight: 700; color: var(--ink-dim); margin-bottom: 4px; }
+.bar { height: 12px; border-radius: 999px; background: var(--surface-2); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; transition: width .7s var(--ease-out); }
+.bar .c1 { background: var(--ink-faint); } .bar .c2 { background: var(--accent); }
+.legend { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--ink-dim); margin-top: 8px; }
 .legend b { color: var(--ink); }
-.hint { margin-top: 10px; width: 100%; text-align: start; font-size: 14px; color: var(--ink-2); font-weight: 600; }
-.hint u { color: var(--accent); text-decoration: none; font-weight: 800; }
 
-.notes { background: var(--n-butter); color: var(--note-ink); border-radius: var(--r-lg); padding: 16px 18px; font-size: 15.5px; line-height: 1.5; }
-
-/* product sheet */
-.phead { display: flex; gap: 14px; align-items: center; }
-.phead .pic { width: 64px; height: 64px; border-radius: 20px; }
-.phead .pic svg { width: 32px; height: 32px; }
-.star { width: 46px; height: 46px; border-radius: 16px; display: grid; place-items: center; background: var(--surface); box-shadow: 0 0 0 1px var(--line); margin-inline-start: auto; flex: none; }
-.star svg { width: 22px; height: 22px; }
-.star.on { color: var(--accent); }
-.barcode { font-family: ui-monospace, monospace; font-size: 12.5px; color: var(--ink-3); letter-spacing: .06em; }
-.offer { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 12px 0; }
-.offer + .offer { border-top: 1px solid var(--line); }
-.offer .ch { font-weight: 700; }
-.offer .br { font-size: 13px; color: var(--ink-2); }
-.offer .p { font-family: var(--font-display); font-weight: 700; font-size: calc(22px * var(--ds)); line-height: 1; grid-row: span 2; text-align: end; }
-.offer .meter { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: var(--bg-2); overflow: hidden; }
-.offer .meter i { display: block; height: 100%; border-radius: 3px; background: var(--ink-3); }
+/* offers */
+.offer { display: grid; grid-template-columns: 40px 1fr auto; gap: 4px 12px; align-items: center; padding: 12px 0; }
+.offer + .offer { border-top: 1px solid var(--divider); }
+.mono { width: 40px; height: 40px; border-radius: 14px; display: grid; place-items: center; font-weight: 900; font-size: 15px; color: var(--ink); grid-row: span 2; }
+.offer .n { font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.offer .b { font-size: 12.5px; color: var(--ink-dim); font-weight: 500; }
+.offer .p { grid-row: span 2; text-align: end; }
+.offer .meter { grid-column: 2 / -1; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.offer .meter i { display: block; height: 100%; border-radius: 3px; background: var(--ink-faint); }
 .offer.best .meter i { background: var(--accent); }
-.manual { display: flex; align-items: center; gap: 10px; }
-.field { flex: 1; display: flex; align-items: center; gap: 6px; height: 50px; padding: 0 14px; background: var(--bg); border-radius: 15px; box-shadow: 0 0 0 1px var(--line) inset; font-weight: 700; }
-.field input { border: 0; background: none; outline: none; width: 100%; font-weight: 700; font-size: 18px; }
-.btn { height: 50px; padding: 0 20px; border-radius: 15px; font-weight: 700; background: var(--inverse); color: var(--inverse-ink); }
-.btn.ghost { background: var(--bg-2); color: var(--ink); }
-.btn.accent { background: var(--accent); color: var(--accent-ink); }
 
-/* switch */
-.sw { width: 52px; height: 32px; border-radius: 16px; background: var(--bg-2); box-shadow: 0 0 0 1px var(--line) inset; position: relative; flex: none; transition: background var(--dur-glide) var(--ease-glide); }
-.sw::after { content: ""; position: absolute; top: 4px; inset-inline-start: 4px; width: 24px; height: 24px; border-radius: 12px; background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform var(--dur-touch) var(--ease-touch); }
-.sw.on { background: var(--accent); box-shadow: none; }
+/* switch, chips, check */
+.sw { width: 52px; height: 32px; border-radius: 16px; background: var(--surface-3); position: relative; flex: none; transition: background .25s; }
+.sw::after { content: ""; position: absolute; top: 3px; inset-inline-start: 3px; width: 26px; height: 26px; border-radius: 13px; background: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: transform .4s var(--ease-spring); }
+.sw.on { background: var(--accent); }
 .sw.on::after { transform: translateX(-20px); }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0 14px; }
-.chip { height: 36px; padding: 0 14px; border-radius: 12px; font-weight: 700; font-size: 14px; background: var(--bg); color: var(--ink-2); box-shadow: 0 0 0 1px var(--line) inset; transition: background var(--dur-glide) var(--ease-glide), color var(--dur-glide); }
-.chip.on { background: var(--ink); color: var(--bg); box-shadow: none; }
-.sw-row { display: flex; gap: 12px; padding: 12px 0; }
-.swatch { width: 44px; height: 44px; border-radius: 15px; position: relative; }
-.swatch.on::after { content: ""; position: absolute; inset: -5px; border-radius: 19px; box-shadow: 0 0 0 2.5px var(--ink); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0 14px; }
+.chip { height: 36px; padding: 0 14px; border-radius: 12px; font-weight: 700; font-size: 13.5px; background: var(--surface-2); color: var(--ink-dim); transition: background .25s, color .25s, box-shadow .25s; }
+.chip.on { background: var(--accent-soft); color: var(--accent-ink); box-shadow: 0 0 0 1.5px var(--accent) inset; }
+.check { width: 28px; height: 28px; border-radius: 9px; border: 2.5px solid var(--surface-3); display: grid; place-items: center; flex: none; transition: background .2s, border-color .2s; }
+.check svg { width: 16px; height: 16px; color: #fff; transform: scale(0); transition: transform .35s var(--ease-spring); }
+.check.on { background: var(--good); border-color: var(--good); }
+.check.on svg { transform: scale(1); }
+.done .ttl { color: var(--ink-faint); text-decoration: line-through; }
 
-.cities { display: grid; gap: 2px; }
-.city { display: flex; justify-content: space-between; align-items: center; min-height: 56px; font-weight: 700; font-size: 18px; width: 100%; padding: 0 4px; }
-.city + .city { border-top: 1px solid var(--line); }
-.city small { font-size: 13px; color: var(--ink-2); font-weight: 600; }
-.city svg { width: 22px; height: 22px; color: var(--accent); }
+/* sheets */
+.scrim { position: absolute; inset: 0; z-index: 60; background: rgba(15,12,8,.45); opacity: 0; }
+.sheet { position: absolute; z-index: 61; left: 0; right: 0; bottom: 0; max-height: 92%; display: flex; flex-direction: column;
+  background: var(--surface); border-radius: 30px 30px 0 0; box-shadow: var(--shadow-float); will-change: transform; }
+.sheet .grab { flex: none; height: 28px; display: grid; place-items: center; touch-action: none; cursor: grab; }
+.sheet .grab::before { content: ""; width: 40px; height: 5px; border-radius: 5px; background: var(--surface-3); }
+.sheet .in { overflow-y: auto; overscroll-behavior: contain; padding: 0 18px calc(22px + env(safe-area-inset-bottom, 0px)); }
+.sheet h3 { margin: 0 0 4px; font-size: 22px; font-weight: 900; letter-spacing: -.02em; }
+.sheet .lead { font-size: 14px; color: var(--ink-dim); margin-bottom: 16px; }
+.amount { text-align: center; padding: 10px 0 18px; }
+.amount .money b { font-size: 56px; } .amount .money i { font-size: 30px; }
+.keypad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; direction: ltr; margin-bottom: 14px; }
+.keypad button { height: 54px; border-radius: 18px; background: var(--surface-2); font-size: 25px; font-weight: 700; display: grid; place-items: center; }
+.keypad svg { width: 26px; height: 26px; }
+.addgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding-bottom: 6px; }
+.addgrid button { border-radius: 22px; padding: 16px 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; }
+.addgrid svg { width: 40px; height: 40px; }
 
-.toast { position: absolute; z-index: 40; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0;
-  background: var(--inverse); color: var(--inverse-ink); padding: 14px 20px; border-radius: 18px; font-weight: 700; font-size: 15px; box-shadow: var(--shadow-float);
-  white-space: nowrap; pointer-events: none; transition: transform var(--dur-touch) var(--ease-touch), opacity var(--dur-fast); }
-.toast.show { transform: translate(-50%, 0); opacity: 1; }
-.toast u { text-decoration: none; color: var(--accent); margin-inline-start: 10px; }
+.toast { position: absolute; z-index: 80; left: 16px; right: 16px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 10px;
+  background: #17140F; color: #FFFFFF; padding: 14px 16px; border-radius: 18px; font-weight: 700; font-size: 14.5px; box-shadow: var(--shadow-float);
+  transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform .45s var(--ease-spring), opacity .2s; }
+.toast.show { transform: none; opacity: 1; }
+.toast svg { width: 22px; height: 22px; flex: none; }
 
-.proto-note { margin-top: 26px; font-size: 13px; color: var(--ink-3); text-align: center; line-height: 1.5; }
-.empty { text-align: center; padding: 50px 20px; color: var(--ink-2); }
-.empty b { display: block; font-family: var(--font-display); font-size: calc(26px * var(--ds)); color: var(--ink); line-height: 1.1; margin-bottom: 6px; }
+.empty { text-align: center; padding: 34px 20px; }
+.empty svg { width: 64px; height: 64px; }
+.empty b { display: block; font-size: 18px; font-weight: 800; margin-top: 12px; }
+.empty p { font-size: 14px; color: var(--ink-dim); margin: 6px 0 0; line-height: 1.5; }
+.basket { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.basket div { border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-card); padding: 12px 10px; text-align: center; }
+.basket div.best { box-shadow: 0 0 0 2.5px var(--accent) inset; }
+.basket small { display: block; font-size: 12px; font-weight: 700; color: var(--ink-dim); margin-bottom: 4px; }
+.note { background: var(--t-butter); border-radius: 22px; padding: 16px 18px; font-size: 15px; line-height: 1.55; }
+.foot { text-align: center; font-size: 12.5px; color: var(--ink-faint); margin-top: 22px; line-height: 1.5; }
 
-.search { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 14px; background: var(--surface); border-radius: 16px; box-shadow: 0 0 0 1px var(--line); margin-bottom: 16px; color: var(--ink-3); }
-.search svg { width: 20px; height: 20px; flex: none; }
-.search input { border: 0; outline: none; background: none; width: 100%; font-size: 16px; color: var(--ink); }
-
-@media (prefers-reduced-motion: reduce) { * { transition-duration: 1ms !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 
 <div id="device" dir="rtl" lang="he">
-  <header class="top">
-    <div class="top-row">
-      <span class="brand">COOKIES BY MAITES</span>
-      <button class="avatar press" id="avatar" aria-label="הגדרות">מ</button>
-    </div>
-    <nav class="tabs" role="tablist">
-      <button class="tab" data-i="0" role="tab">מתכונים<span class="count num" id="c0"></span></button>
-      <button class="tab" data-i="1" role="tab">מוצרים<span class="count num" id="c1"></span></button>
-    </nav>
-    <div class="tab-bar"><i id="tabInd"></i></div>
-  </header>
-
-  <section class="pane" id="p0" aria-label="מתכונים">
-    <div class="subrow"><div class="filters" id="catFilters"></div></div>
-    <div class="cards" id="cards"></div>
-  </section>
-
-  <section class="pane" id="p1" aria-label="מוצרים">
-    <div class="subrow">
-      <div class="filters" id="prodFilters">
-        <button class="filter on" data-f="all">הכל</button>
-        <button class="filter" data-f="fav">מועדפים</button>
-      </div>
-      <button class="city-btn press" id="cityBtn"></button>
-    </div>
-    <label class="search"><span id="searchIcon"></span><input id="q" placeholder="חיפוש מוצר או ברקוד" autocomplete="off"></label>
-    <div id="plist"></div>
-  </section>
-
-  <button class="fab fab2 press" id="scan" aria-label="סריקת ברקוד" hidden></button>
-  <button class="fab press" id="fab" aria-label="הוספה"></button>
-  <div class="toast" id="toast"></div>
+  <section class="screen" id="s-recipes"></section>
+  <section class="screen" id="s-products" hidden></section>
+  <section class="screen" id="s-list" hidden></section>
+  <section class="screen" id="s-settings" hidden></section>
+  <nav class="tabbar" id="tabbar" aria-label="ניווט ראשי"></nav>
+  <div class="toast" id="toast" role="status"></div>
 </div>
 
 <script>
-/* ---------------------------------------------------------------- motion: Noted's two springs */
-const MOTION = { touch: { k: 520, c: 25 }, glide: { k: 230, c: 30 } };
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-function springCurve({ k, c }) {
-  let x = 0, v = 0, t = 0; const dt = 1/600, pts = [];
-  while (t < 3) { const a = -k*(x-1) - c*v; v += a*dt; x += v*dt; t += dt; pts.push(x); if (Math.abs(x-1) < .001 && Math.abs(v) < .02) break; }
-  const N = 48, out = []; for (let i = 0; i <= N; i++) out.push(+pts[Math.min(pts.length-1, Math.round(i/N*(pts.length-1)))].toFixed(4));
-  out[0] = 0; out[N] = 1; return { easing: `linear(${out.join(',')})`, dur: Math.round(t*1000) };
-}
-if (CSS.supports('transition-timing-function', 'linear(0, 1)')) for (const n of ['touch', 'glide']) {
-  const s = springCurve(MOTION[n]); document.documentElement.style.setProperty(`--ease-${n}`, s.easing); document.documentElement.style.setProperty(`--dur-${n}`, s.dur + 'ms');
-}
-class Spring {
-  constructor(v, on) { this.v = v; this.vel = 0; this.target = v; this.on = on; this.raf = 0; }
-  set(v) { cancelAnimationFrame(this.raf); this.raf = 0; this.v = this.target = v; this.vel = 0; this.on(v); }
-  to(target, cfg = MOTION.glide, vel) {
-    this.target = target; this.cfg = cfg; if (vel != null) this.vel = vel;
-    if (reduce) { this.set(target); return Promise.resolve(); }
-    return new Promise(res => { this.res = res; if (!this.raf) { this.last = performance.now(); this.raf = requestAnimationFrame(this.tick); } });
-  }
-  tick = now => {
-    const dt = Math.min(.05, (now - this.last) / 1000); this.last = now;
-    const { k, c } = this.cfg, steps = Math.max(1, Math.ceil(dt*480)), h = dt/steps;
-    for (let i = 0; i < steps; i++) { const a = -k*(this.v - this.target) - c*this.vel; this.vel += a*h; this.v += this.vel*h; }
-    if (Math.abs(this.v - this.target) < .0008 * Math.max(1, Math.abs(this.target)) && Math.abs(this.vel) < .01 * Math.max(1, Math.abs(this.target))) {
-      this.v = this.target; this.vel = 0; this.raf = 0; this.on(this.v); this.res && this.res(); return;
-    }
-    this.on(this.v); this.raf = requestAnimationFrame(this.tick);
-  };
-}
-function tracker() { const p = []; return { add(y) { const t = performance.now(); p.push([t, y]); while (p.length > 2 && t - p[0][0] > 90) p.shift(); },
-  vel() { if (p.length < 2) return 0; const [t0, y0] = p[0], [t1, y1] = p[p.length-1]; return t1 === t0 ? 0 : (y1-y0)/((t1-t0)/1000); } }; }
-const buzz = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
-
-/* ---------------------------------------------------------------- icons (stroke, Phosphor-like) */
-const P = {
-  plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
-  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
-  star: '<path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
-  pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
-  down: '<path d="m6 9.5 6 6 6-6"/>', check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
-  camera: '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/>',
-  scan: '<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M8 9v6M11 9v6M14 9v6M17 9v6"/>',
-  bag: '<path d="M5 8h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
-  wheat: '<path d="M12 21V9M12 9c-2.5 0-4-1.8-4-4.5 2.5 0 4 1.8 4 4.5zM12 9c2.5 0 4-1.8 4-4.5-2.5 0-4 1.8-4 4.5zM12 14c-2.5 0-4-1.8-4-4.5 2.5 0 4 1.8 4 4.5zM12 14c2.5 0 4-1.8 4-4.5-2.5 0-4 1.8-4 4.5z"/>',
-  cube: '<path d="m12 3.5 7.5 4.2v8.6L12 20.5l-7.5-4.2V7.7z"/><path d="m4.5 7.7 7.5 4.2 7.5-4.2M12 11.9v8.6"/>',
-  egg: '<path d="M12 3.5c3.5 0 6.5 5.5 6.5 10a6.5 6.5 0 0 1-13 0c0-4.5 3-10 6.5-10z"/>',
-  drop: '<path d="M12 3.5s6 6.4 6 11a6 6 0 0 1-12 0c0-4.6 6-11 6-11z"/>',
-  bar: '<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M5 9.3h14M5 14.6h14M12 4v16"/>',
-  butter: '<path d="M3.5 15 8 9h12.5v6z"/><path d="M3.5 15v3h17v-3"/>',
-  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
-  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
-  pen: '<path d="m15 5 4 4L8.5 19.5H4.5v-4z"/>',
-  close: '<path d="M6 6l12 12M18 6 6 18"/>',
-  cart: '<path d="M3.5 4.5h2.2l2 11h10.8l1.8-7.5H6.6"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
+/* ================================================================ icons — sticker style (flat fill + ink outline) */
+const st = (on = true) => `stroke="${on ? 'var(--stroke)' : 'var(--ink-faint)'}" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"`;
+const off = 'var(--surface-2)';
+const svg = inner => `<svg viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
+const NAV = {
+  recipes: on => svg(`<path d="M4.5 5.2c2.6-1 5.2-.8 7.5.8v14c-2.3-1.6-4.9-1.8-7.5-.8z" fill="${on ? '#FFC93C' : off}" ${st(on)}/><path d="M19.5 5.2c-2.6-1-5.2-.8-7.5.8v14c2.3-1.6 4.9-1.8 7.5-.8z" fill="${on ? '#FFFFFF' : off}" ${st(on)}/><circle cx="15.8" cy="10.4" r="1.6" fill="${on ? '#F25C54' : 'var(--ink-faint)'}"/>`),
+  products: on => svg(`<path d="M5 8.4h14l-1.1 11a1.6 1.6 0 0 1-1.6 1.4H7.7a1.6 1.6 0 0 1-1.6-1.4z" fill="${on ? '#F08A24' : off}" ${st(on)}/><path d="M9 8.4V7a3 3 0 0 1 6 0v1.4" fill="none" ${st(on)}/><circle cx="12" cy="14.2" r="2.2" fill="${on ? '#FFFFFF' : 'var(--ink-faint)'}" ${on ? st(on) : ''}/>`),
+  list: on => svg(`<rect x="4.6" y="4.4" width="14.8" height="16.2" rx="3" fill="${on ? '#FFFFFF' : off}" ${st(on)}/><path d="M8.6 3.4h6.8v3.2H8.6z" fill="${on ? '#4F7BFF' : off}" ${st(on)}/><path d="m8.2 11.6 1.5 1.5 2.6-2.8M14 12h2.4M8.4 16.6h8" fill="none" ${st(on)}/>`),
+  settings: on => svg(`<path d="M19.25 10.53 21.52 10.76v2.48l-2.27.23-1.08 2.62 1.44 1.76-1.76 1.76-1.76-1.44-2.62 1.08-.23 2.27h-2.48l-.23-2.27-2.62-1.08-1.76 1.44-1.76-1.76 1.44-1.76-1.08-2.62-2.27-.23v-2.48l2.27-.23 1.08-2.62-1.44-1.76 1.76-1.76 1.76 1.44 2.62-1.08.23-2.27h2.48l.23 2.27 2.62 1.08 1.76-1.44 1.76 1.76-1.44 1.76z" fill="${on ? '#8467FF' : off}" ${st(on)}/><circle cx="12" cy="12" r="3.2" fill="${on ? '#FFFFFF' : off}" ${st(on)}/>`),
 };
-const ic = (n, fill) => `<svg viewBox="0 0 24 24" fill="${fill ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const CAT_ICON = {
+  all: svg(`<rect x="4" y="4" width="7" height="7" rx="2" fill="#FFC93C" ${st()}/><rect x="13" y="4" width="7" height="7" rx="2" fill="#F25C54" ${st()}/><rect x="4" y="13" width="7" height="7" rx="2" fill="#4F7BFF" ${st()}/><rect x="13" y="13" width="7" height="7" rx="2" fill="#3DB86B" ${st()}/>`),
+  baking: svg(`<path d="M6 9.5h12l-1.3 10.3a1.4 1.4 0 0 1-1.4 1.2H8.7a1.4 1.4 0 0 1-1.4-1.2z" fill="#FFFFFF" ${st()}/><path d="M6 9.5c0-3.2 2.7-5.6 6-5.6s6 2.4 6 5.6z" fill="#FFE29A" ${st()}/><path d="M9 14h6" ${st()}/>`),
+  dairy: svg(`<path d="M8 3.8h8v3l2 3.2v10.2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V10l2-3.2z" fill="#FFFFFF" ${st()}/><path d="M6 13h12v4.5H6z" fill="#7FB2FF" ${st()}/><path d="M8 6.8h8" ${st()}/>`),
+  choc: svg(`<rect x="4.5" y="4" width="15" height="16" rx="2.4" fill="#8A4B2A" ${st()}/><path d="M4.5 9.3h15M4.5 14.6h15M12 4v16" ${st()}/><path d="M13.5 20 19.5 14v4a2 2 0 0 1-2 2z" fill="#E7E2D8" ${st()}/>`),
+  pantry: svg(`<rect x="6" y="7.5" width="12" height="13" rx="3" fill="#FFC93C" ${st()}/><rect x="7.2" y="3.6" width="9.6" height="3.9" rx="1.2" fill="#F25C54" ${st()}/><path d="M9 12.5h6v4H9z" fill="#FFFFFF" ${st()}/>`),
+  fav: svg(`<path d="M12 20.2s-7.6-4.6-7.6-10.1A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.6 2.5c0 5.5-7.6 10.1-7.6 10.1z" fill="#F25C54" ${st()}/>`),
+  cookies: svg(`<circle cx="12" cy="12" r="8" fill="#E7B36C" ${st()}/><circle cx="9.5" cy="10" r="1.2" fill="#3D2414"/><circle cx="14" cy="9" r="1" fill="#3D2414"/><circle cx="13.5" cy="14.2" r="1.3" fill="#3D2414"/><circle cx="9.4" cy="14.6" r=".9" fill="#3D2414"/>`),
+  cakes: svg(`<path d="M4.5 12.5h15v7a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1z" fill="#8A4B2A" ${st()}/><path d="M4.5 12.5c0-2.4 3.4-4.3 7.5-4.3s7.5 1.9 7.5 4.3z" fill="#FDE3EA" ${st()}/><path d="M12 8.2V4.5" ${st()}/><circle cx="12" cy="4" r="1.2" fill="#F25C54" ${st()}/>`),
+};
+const LINE = {
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>', back: '<path d="m9.5 5.5 6.5 6.5-6.5 6.5"/>',
+  plus: '<path d="M12 4.5v15M4.5 12h15"/>', minus: '<path d="M5 12h14"/>', close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  chev: '<path d="m14.5 6-6 6 6 6"/>', check: '<path d="m5.5 12.5 4.2 4.2L18.5 8"/>',
+  camera: '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/>',
+  heart: '<path d="M12 20.2s-7.6-4.6-7.6-10.1A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.6 2.5c0 5.5-7.6 10.1-7.6 10.1z"/>',
+  backspace: '<path d="M9 5.5h10.5a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5H9L3.5 12z"/><path d="m11.5 9.5 5 5m0-5-5 5"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>', pen: '<path d="m15 5 4 4L8.5 19.5H4.5v-4z"/>',
+};
+const li = (n, w = 2.2) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LINE[n]}</svg>`;
+const PIN = svg(`<path d="M12 21.2s-6.8-6-6.8-11.3a6.8 6.8 0 0 1 13.6 0c0 5.3-6.8 11.3-6.8 11.3z" fill="#F25C54" ${st()}/><circle cx="12" cy="9.8" r="2.6" fill="#FFFFFF" ${st()}/>`);
+const BELL = svg(`<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.6 2.1H4.4z" fill="#FFC93C" ${st()}/><path d="M10 20.4a2 2 0 0 0 4 0" fill="none" ${st()}/>`);
+const SCAN = svg(`<rect x="3.5" y="5" width="17" height="14" rx="3" fill="#FFFFFF" ${st()}/><path d="M7 8.5v7M9.5 8.5v7M12 8.5v7M14.5 8.5v7M17 8.5v7" ${st()}/><path d="M2.5 12h19" stroke="#F25C54" stroke-width="2.2" stroke-linecap="round"/>`);
+const DL = svg(`<rect x="4" y="4" width="16" height="16" rx="5" fill="#3DB86B" ${st()}/><path d="M12 7.5v8M8.5 12.5 12 16l3.5-3.5" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`);
+const TAG = svg(`<path d="M3.8 12.6V5.2a1.4 1.4 0 0 1 1.4-1.4h7.4l7.6 7.6a1.4 1.4 0 0 1 0 2l-7.4 7.4a1.4 1.4 0 0 1-2 0z" fill="#FFC93C" ${st()}/><circle cx="8.3" cy="8.3" r="1.6" fill="#FFFFFF" ${st()}/>`);
+const CLOCKI = svg(`<circle cx="12" cy="12" r="8.2" fill="#ECE9FF" ${st()}/><path d="M12 7.6V12l3 2" fill="none" ${st()}/>`);
 
-/* ---------------------------------------------------------------- sample data (examples, not real prices) */
+/* ================================================================ data — sample prices; product photos are real (Open Food Facts) */
 const CHAINS = [
-  { id: 'shufersal', name: 'שופרסל דיל', f: 1.07 }, { id: 'rami', name: 'רמי לוי', f: .92 },
-  { id: 'victory', name: 'ויקטורי', f: .97 }, { id: 'yochananof', name: 'יוחננוף', f: .95 },
-  { id: 'osher', name: 'אושר עד', f: .93 }, { id: 'carrefour', name: 'קרפור', f: 1.0 },
+  { id: 'shufersal', name: 'שופרסל', f: 1.07, m: 'ש', c: '--t-rose' }, { id: 'rami', name: 'רמי לוי', f: .92, m: 'ר', c: '--t-sky' },
+  { id: 'victory', name: 'ויקטורי', f: .97, m: 'ו', c: '--t-mint' }, { id: 'yochananof', name: 'יוחננוף', f: .95, m: 'י', c: '--t-butter' },
+  { id: 'osher', name: 'אושר עד', f: .93, m: 'א', c: '--t-lav' }, { id: 'carrefour', name: 'קרפור', f: 1.0, m: 'ק', c: '--t-peach' },
 ];
 const CITIES = {
-  'תל אביב': { f: 1.05, streets: ['אבן גבירול', 'דיזנגוף', 'יגאל אלון', 'רמת אביב', 'נמל תל אביב', 'פלורנטין'] },
-  'ירושלים': { f: 1.0, streets: ['תלפיות', 'גבעת שאול', 'פסגת זאב', 'הר חומה', 'מלחה', 'רוממה'] },
-  'חיפה': { f: .99, streets: ['חוצות המפרץ', 'כרמל', 'נווה שאנן', 'צ׳ק פוסט', 'הדר', 'גרנד קניון'] },
-  'באר שבע': { f: .96, streets: ['עמק שרה', 'רמות', 'נווה זאב', 'הקריה', 'בית יציב', 'שכונה ד׳'] },
-  'עפולה': { f: .95, streets: ['עפולה עילית', 'מרכז', 'אזור תעשייה', 'גבעת המורה', 'יזרעאל', 'שדרות'] },
-  'ראשון לציון': { f: 1.01, streets: ['הזהב', 'רוטשילד', 'נחלת יהודה', 'קניון הזהב', 'מערב', 'רמת אליהו'] },
+  'תל אביב': { f: 1.05, s: ['אבן גבירול', 'דיזנגוף סנטר', 'יגאל אלון', 'רמת אביב', 'נמל תל אביב', 'פלורנטין'] },
+  'ירושלים': { f: 1.0, s: ['תלפיות', 'גבעת שאול', 'פסגת זאב', 'הר חומה', 'מלחה', 'רוממה'] },
+  'חיפה': { f: .99, s: ['חוצות המפרץ', 'מרכז הכרמל', 'נווה שאנן', 'צ׳ק פוסט', 'הדר', 'גרנד קניון'] },
+  'באר שבע': { f: .96, s: ['עמק שרה', 'רמות', 'נווה זאב', 'הקריה', 'גב ים', 'שכונה ד׳'] },
+  'עפולה': { f: .95, s: ['עפולה עילית', 'מרכז העיר', 'אזור התעשייה', 'גבעת המורה', 'יזרעאל', 'השדרה'] },
+  'ראשון לציון': { f: 1.01, s: ['הזהב', 'רוטשילד', 'נחלת יהודה', 'מערב', 'רמת אליהו', 'קניון הזהב'] },
 };
+const CATS = [{ id: 'baking', name: 'אפייה' }, { id: 'dairy', name: 'חלב וביצים' }, { id: 'choc', name: 'שוקולד' }, { id: 'pantry', name: 'מזווה' }];
 const PRODUCTS = [
-  { id: 'flour', name: 'קמח לבן', brand: 'סוגת', pack: 1000, unit: 'g', base: 6.9, icon: 'wheat', color: '--n-sand', code: '7290000066318' },
-  { id: 'sugar', name: 'סוכר לבן', brand: 'סוגת', pack: 1000, unit: 'g', base: 6.5, icon: 'cube', color: '--n-sky', code: '7290000066110' },
-  { id: 'brown', name: 'סוכר חום דמררה', brand: 'סוגת', pack: 1000, unit: 'g', base: 12.9, icon: 'cube', color: '--n-peach', code: '7290000066271' },
-  { id: 'butter', name: 'חמאה', brand: 'תנובה', pack: 200, unit: 'g', base: 9.9, icon: 'butter', color: '--n-butter', code: '7290004127329' },
-  { id: 'eggs', name: 'ביצים L', brand: '12 יח׳', pack: 12, unit: 'u', base: 13.6, icon: 'egg', color: '--n-sage', code: '7290000441016' },
-  { id: 'choc', name: 'שוקולד צ׳יפס מריר', brand: 'כרמית', pack: 200, unit: 'g', base: 14.9, icon: 'bar', color: '--n-rose', code: '7290000171005' },
-  { id: 'cocoa', name: 'אבקת קקאו', brand: 'עלית', pack: 200, unit: 'g', base: 16.9, icon: 'bar', color: '--n-lilac', code: '7290000123011' },
-  { id: 'oats', name: 'שיבולת שועל', brand: 'קוואקר', pack: 500, unit: 'g', base: 11.5, icon: 'wheat', color: '--n-mint', code: '7290000276052' },
-  { id: 'vanilla', name: 'תמצית וניל', brand: 'מאסטר שף', pack: 50, unit: 'ml', base: 9.9, icon: 'drop', color: '--n-butter', code: '7290011498016' },
-  { id: 'bp', name: 'אבקת אפייה', brand: 'מאסטר שף', pack: 100, unit: 'g', base: 4.5, icon: 'cube', color: '--n-sand', code: '7290011498115' },
+  { id: 'flour', cat: 'baking', name: 'קמח חיטה לבן', brand: 'סוגת', pack: 1000, unit: 'g', base: 6.9, code: '7290100703625' },
+  { id: 'sr', cat: 'baking', name: 'קמח תופח', brand: 'אוסם', pack: 1000, unit: 'g', base: 8.9, code: '7290000063157' },
+  { id: 'sugar', cat: 'baking', name: 'סוכר לבן', brand: 'סוגת', pack: 1000, unit: 'g', base: 6.5, code: '7290003643387' },
+  { id: 'brown', cat: 'baking', name: 'סוכר חום', brand: 'סוגת', pack: 1000, unit: 'g', base: 12.9, code: '', tint: '--t-peach' },
+  { id: 'bp', cat: 'baking', name: 'אבקת אפייה', brand: 'מאסטר שף', pack: 100, unit: 'g', base: 4.5, code: '', tint: '--t-sky' },
+  { id: 'vanilla', cat: 'baking', name: 'תמצית וניל', brand: 'הנמל', pack: 250, unit: 'ml', base: 12.9, code: '0835811000471' },
+  { id: 'butter', cat: 'dairy', name: 'חמאה', brand: 'תנובה', pack: 200, unit: 'g', base: 9.9, code: '7290116932033' },
+  { id: 'eggs', cat: 'dairy', name: 'ביצים L', brand: 'תנובה', pack: 12, unit: 'u', base: 13.6, code: '7290000604022' },
+  { id: 'cream', cat: 'dairy', name: 'שמנת מתוקה 32%', brand: 'תנובה', pack: 250, unit: 'ml', base: 7.4, code: '7290004125738' },
+  { id: 'milk', cat: 'dairy', name: 'חלב טרי 3%', brand: 'תנובה', pack: 1000, unit: 'ml', base: 7.1, code: '7290004131074' },
+  { id: 'chips', cat: 'choc', name: 'שוקולד צ׳יפס מריר', brand: 'כרמית', pack: 250, unit: 'g', base: 16.9, code: '7290019939436' },
+  { id: 'dark', cat: 'choc', name: 'שוקולד מריר 60%', brand: 'עלית', pack: 100, unit: 'g', base: 7.9, code: '', tint: '--t-rose' },
+  { id: 'cocoa', cat: 'choc', name: 'אבקת קקאו', brand: 'עלית', pack: 200, unit: 'g', base: 16.9, code: '', tint: '--t-lav' },
+  { id: 'oats', cat: 'pantry', name: 'שיבולת שועל עבה', brand: 'מיה', pack: 500, unit: 'g', base: 11.5, code: '7290017068985' },
+  { id: 'honey', cat: 'pantry', name: 'דבש טהור', brand: 'יד מרדכי', pack: 500, unit: 'g', base: 24.9, code: '7290112344410' },
+  { id: 'canola', cat: 'pantry', name: 'שמן קנולה', brand: 'טעמן', pack: 1000, unit: 'ml', base: 11.9, code: '7290005437632' },
 ];
 const RECIPES = [
-  { id: 'cc', name: 'עוגיות שוקולד צ׳יפס', cat: 'עוגיות', yield: 24, word: 'עוגיות', time: '35 דק׳', color: '--n-peach', dough: 0, chips: 9,
-    ing: [['flour', 280], ['butter', 200], ['brown', 150], ['sugar', 60], ['eggs', 2], ['choc', 200], ['vanilla', 5], ['bp', 6]],
+  { id: 'cc', cat: 'cookies', name: 'עוגיות שוקולד צ׳יפס', yield: 24, word: 'עוגיות', one: 'עוגייה', time: 35, tint: '--t-peach', dough: 0, chips: 9,
+    ing: [['flour', 280], ['butter', 200], ['brown', 150], ['sugar', 60], ['eggs', 2], ['chips', 200], ['vanilla', 5], ['bp', 6]],
     pack: .35, gas: 6, labor: 30, sell: 4.5, notes: 'לקרר את הבצק שעה לפחות. להוציא מהתנור כשהמרכז עוד רך — הן ממשיכות להתייצב על המגש.' },
-  { id: 'oat', name: 'עוגיות שיבולת שועל', cat: 'עוגיות', yield: 30, word: 'עוגיות', time: '30 דק׳', color: '--n-sage', dough: 1, chips: 4,
-    ing: [['oats', 250], ['flour', 120], ['butter', 150], ['brown', 140], ['eggs', 1], ['vanilla', 5], ['bp', 4]],
+  { id: 'oat', cat: 'cookies', name: 'עוגיות שיבולת שועל ודבש', yield: 30, word: 'עוגיות', one: 'עוגייה', time: 30, tint: '--t-mint', dough: 1, chips: 0,
+    ing: [['oats', 250], ['flour', 120], ['butter', 150], ['honey', 80], ['brown', 100], ['eggs', 1], ['vanilla', 5], ['bp', 4]],
     pack: .3, gas: 6, labor: 25, sell: 3.5, notes: 'אפשר להחליף חצי מהחמאה בשמן קוקוס.' },
-  { id: 'brownie', name: 'בראוניז', cat: 'עוגות', yield: 16, word: 'ריבועים', time: '45 דק׳', color: '--n-lilac', dough: 2, chips: 6,
-    ing: [['choc', 200], ['butter', 200], ['sugar', 250], ['eggs', 4], ['flour', 120], ['cocoa', 30], ['vanilla', 5]],
+  { id: 'brownie', cat: 'cakes', name: 'בראוניז', yield: 16, word: 'ריבועים', one: 'ריבוע', time: 45, tint: '--t-lav', dough: 2, chips: 6,
+    ing: [['dark', 200], ['butter', 200], ['sugar', 250], ['eggs', 4], ['flour', 120], ['cocoa', 30], ['vanilla', 5]],
     pack: .45, gas: 7, labor: 30, sell: 8, notes: 'תבנית 24×24. 22 דקות ב-175° — לא יותר.' },
-  { id: 'shortbread', name: 'עוגיות חמאה', cat: 'עוגיות', yield: 36, word: 'עוגיות', time: '40 דק׳', color: '--n-butter', dough: 3, chips: 0,
+  { id: 'shortbread', cat: 'cookies', name: 'עוגיות חמאה', yield: 36, word: 'עוגיות', one: 'עוגייה', time: 40, tint: '--t-butter', dough: 3, chips: 0,
     ing: [['butter', 250], ['flour', 375], ['sugar', 125], ['eggs', 1], ['vanilla', 5]],
     pack: .25, gas: 5, labor: 25, sell: 2.5, notes: '' },
+  { id: 'cake', cat: 'cakes', name: 'עוגת שוקולד ושמנת', yield: 12, word: 'פרוסות', one: 'פרוסה', time: 70, tint: '--t-rose', dough: 2, chips: 0,
+    ing: [['sr', 200], ['cocoa', 50], ['sugar', 200], ['eggs', 3], ['canola', 120], ['milk', 200], ['cream', 250], ['dark', 100]],
+    pack: .6, gas: 8, labor: 35, sell: 12, notes: 'הקצפה רק לפני ההגשה.' },
 ];
+const RCATS = [{ id: 'all', name: 'הכל' }, { id: 'cookies', name: 'עוגיות' }, { id: 'cakes', name: 'עוגות' }];
 
-/* ---------------------------------------------------------------- state */
-const store = { get(k, d) { try { const v = localStorage.getItem('cbm.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('cbm.' + k, JSON.stringify(v)); } catch (e) {} } };
+/* ================================================================ state */
+const store = { get(k, d) { try { const v = localStorage.getItem('cbm2.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('cbm2.' + k, JSON.stringify(v)); } catch (e) {} } };
 const S = {
-  city: store.get('city', 'תל אביב'), favs: new Set(store.get('favs', ['butter', 'choc', 'eggs'])),
-  manual: store.get('manual', {}), alerts: store.get('alerts', { choc: 12.9 }),
-  theme: store.get('theme', 'system'), accent: store.get('accent', 'fire'),
+  tab: 'recipes', city: store.get('city', 'תל אביב'), favs: new Set(store.get('favs', ['butter', 'chips', 'eggs'])),
+  manual: store.get('manual', {}), alerts: store.get('alerts', { chips: 14.9 }),
+  theme: store.get('theme', 'system'), accent: store.get('accent', 'caramel'),
   notif: store.get('notif', { drop: true, weekly: true, enter: true, cityAuto: true, list: false, quiet: true, chains: ['rami', 'osher', 'shufersal'] }),
-  photos: {}, prodFilter: 'all', recipeCat: 'הכל', q: '',
+  photos: {}, rcat: 'all', pcat: 'all', rq: '', pq: '',
+  list: store.get('list', [['cc', 48], ['brownie', 16]]), got: new Set(store.get('got', [])),
 };
-const saveS = () => { store.set('city', S.city); store.set('favs', [...S.favs]); store.set('manual', S.manual); store.set('alerts', S.alerts); store.set('theme', S.theme); store.set('accent', S.accent); store.set('notif', S.notif); };
-function applyLook() {
-  const r = document.documentElement;
-  if (S.theme === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', S.theme);
-  r.setAttribute('data-accent', S.accent);
-}
+const save = () => { for (const k of ['city', 'manual', 'alerts', 'theme', 'accent', 'notif', 'list']) store.set(k, S[k]); store.set('favs', [...S.favs]); store.set('got', [...S.got]); };
+function applyLook() { const r = document.documentElement; S.theme === 'system' ? r.removeAttribute('data-theme') : r.setAttribute('data-theme', S.theme); r.setAttribute('data-accent', S.accent); }
 applyLook();
 
-/* deterministic example prices */
 function hash(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967295; }
+const offerCache = new Map();
 function offers(p, city = S.city) {
+  const key = p.id + city; if (offerCache.has(key)) return offerCache.get(key);
   const C = CITIES[city];
-  return CHAINS.map((ch, i) => {
-    if (hash(city + ch.id) < .12) return null; // not every chain is in every city
-    const noise = .9 + hash(p.id + ch.id + city) * .22;
-    const price = Math.round(p.base * ch.f * C.f * noise * 10) / 10 - .01;
-    return { chain: ch, branch: C.streets[i % C.streets.length], price };
-  }).filter(Boolean).sort((a, b) => a.price - b.price);
+  const r = CHAINS.map((ch, i) => hash(city + ch.id) < .12 ? null : { chain: ch, branch: C.s[i % C.s.length],
+    price: Math.round(p.base * ch.f * C.f * (.9 + hash(p.id + ch.id + city) * .22) * 10) / 10 - .01 }).filter(Boolean).sort((a, b) => a.price - b.price);
+  offerCache.set(key, r); return r;
 }
 const prod = id => PRODUCTS.find(p => p.id === id);
 const unitPrice = p => S.manual[p.id] ?? offers(p)[0].price;
-const ils = (n, d = 2) => `<bdi>₪${n.toFixed(d)}</bdi>`;
-const qty = (q, unit) => unit === 'u' ? `${+q.toFixed(1)} יח׳` : unit === 'ml' ? `${Math.round(q)} מ״ל` : q >= 1000 ? `${+(q/1000).toFixed(2)} ק״ג` : `${Math.round(q)} ג׳`;
-const sizeLabel = p => `${p.brand} · ${qty(p.pack, p.unit)}`;
+const fmt = (v, d = 2) => v.toLocaleString('he-IL', { minimumFractionDigits: d, maximumFractionDigits: d });
+const money = (v, size = 20, d = 2) => `<span class="money" style="font-size:${size}px"><i>₪</i><b>${fmt(v, d)}</b></span>`;
+const qty = (q, u) => u === 'u' ? `${+q.toFixed(1)} יח׳` : u === 'ml' ? (q >= 1000 ? `${+(q / 1000).toFixed(2)} ל׳` : `${Math.round(q)} מ״ל`) : q >= 1000 ? `${+(q / 1000).toFixed(2)} ק״ג` : `${Math.round(q)} ג׳`;
+const size = p => `${p.brand} · ${qty(p.pack, p.unit)}`;
+const img = p => p.code ? `<img src="img/${p.code}.webp" alt="" loading="lazy" decoding="async" width="200" height="200">`
+  : `<span style="display:grid;place-items:center;width:100%;height:100%;background:var(${p.tint})">${CAT_ICON[p.cat]}</span>`;
 
-/* costing — the one function the Kotlin app will mirror */
 function costing(r, units) {
   const f = units / r.yield;
-  const rows = r.ing.map(([id, q]) => { const p = prod(id); const qq = q * f; return { p, q: qq, cost: qq / p.pack * unitPrice(p) }; });
-  const ingredients = rows.reduce((s, x) => s + x.cost, 0);
-  const pack = r.pack * units, gas = ingredients * r.gas / 100, labor = r.labor * f;
+  const rows = r.ing.map(([id, q]) => { const p = prod(id), qq = q * f; return { p, q: qq, cost: qq / p.pack * unitPrice(p) }; });
+  const ingredients = rows.reduce((s, x) => s + x.cost, 0), pack = r.pack * units, gas = ingredients * r.gas / 100, labor = r.labor * f;
   const total = ingredients + pack + gas + labor;
   return { rows, ingredients, pack, gas, labor, total, perUnit: total / units };
 }
 
-/* cookie art — seeded per recipe */
-function cookieSVG(r, size = 120) {
+/* recipe illustration, until a photo is added */
+const cookieCache = new Map();
+function cookie(r) {
+  if (cookieCache.has(r.id)) return cookieCache.get(r.id);
   const looks = [['var(--dough-a)', 'var(--dough-b)'], ['#D9B47A', '#B48A4E'], ['#5B3A26', '#3E2416'], ['#F2D8A0', '#DDB874']];
-  const [a, b] = looks[r.dough];
-  let seed = Math.floor(hash(r.id) * 1e9);
-  const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
-  let path = ''; for (let i = 0; i <= 28; i++) { const t = i / 28 * 6.283, rr = 52 + (rnd() - .5) * 5; path += (i ? 'L' : 'M') + (60 + Math.cos(t)*rr).toFixed(1) + ' ' + (60 + Math.sin(t)*rr).toFixed(1); }
-  let chips = ''; for (let i = 0; i < r.chips; i++) {
-    const ang = rnd() * 6.283, rad = 8 + rnd() * 34, x = 60 + Math.cos(ang)*rad, y = 60 + Math.sin(ang)*rad;
-    chips += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="${(4 + rnd()*3).toFixed(1)}" ry="${(3.2 + rnd()*2.4).toFixed(1)}" style="fill:var(--chip)" transform="rotate(${Math.round(rnd()*90)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
-  }
-  let crumbs = ''; if (r.dough !== 2) for (let i = 0; i < 7; i++) crumbs += `<circle cx="${(28 + rnd()*64).toFixed(1)}" cy="${(28 + rnd()*64).toFixed(1)}" r="1.3" style="fill:${b}" opacity=".7"/>`;
-  return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" aria-hidden="true"><defs><radialGradient id="g${r.id}" cx="40%" cy="35%" r="70%"><stop offset="0" style="stop-color:${a}"/><stop offset="1" style="stop-color:${b}"/></radialGradient></defs><path d="${path}Z" fill="url(#g${r.id})"/>${crumbs}${chips}</svg>`;
+  const [a, b] = looks[r.dough]; let seed = Math.floor(hash(r.id) * 1e9);
+  const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  let d = ''; for (let i = 0; i <= 28; i++) { const t = i / 28 * 6.283, rr = 52 + (rnd() - .5) * 5; d += (i ? 'L' : 'M') + (60 + Math.cos(t) * rr).toFixed(1) + ' ' + (60 + Math.sin(t) * rr).toFixed(1); }
+  let x = ''; for (let i = 0; i < r.chips; i++) { const g = rnd() * 6.283, rr = 8 + rnd() * 34, cx = (60 + Math.cos(g) * rr).toFixed(1), cy = (60 + Math.sin(g) * rr).toFixed(1);
+    x += `<ellipse cx="${cx}" cy="${cy}" rx="${(4 + rnd() * 3).toFixed(1)}" ry="${(3.2 + rnd() * 2.4).toFixed(1)}" style="fill:var(--chip)" transform="rotate(${Math.round(rnd() * 90)} ${cx} ${cy})"/>`; }
+  if (r.dough !== 2) for (let i = 0; i < 7; i++) x += `<circle cx="${(28 + rnd() * 64).toFixed(1)}" cy="${(28 + rnd() * 64).toFixed(1)}" r="1.3" style="fill:${b}" opacity=".7"/>`;
+  const out = `<svg viewBox="0 0 120 120" class="art" aria-hidden="true"><defs><radialGradient id="g${r.id}" cx="40%" cy="35%" r="70%"><stop offset="0" style="stop-color:${a}"/><stop offset="1" style="stop-color:${b}"/></radialGradient></defs><path d="${d}Z" fill="url(#g${r.id})"/>${x}</svg>`;
+  cookieCache.set(r.id, out); return out;
 }
-const art = r => S.photos[r.id] ? `<img src="${S.photos[r.id]}" alt="">` : cookieSVG(r);
+const gallery = r => S.photos[r.id] || [];
+const cover = r => gallery(r).length ? `<img src="${gallery(r)[r.coverIdx || 0]}" alt="">` : cookie(r);
 
-/* ---------------------------------------------------------------- tabs: one glide spring drives panes, titles and the bar */
-const panes = [p0, p1], tabs = [...document.querySelectorAll('.tab')];
-let tabT = 0;
-const tabSpring = new Spring(0, t => {
-  tabT = t; const w = 100;
-  panes[0].style.transform = `translateX(${t * w}%)`;
-  panes[1].style.transform = `translateX(${(t - 1) * w}%)`;
-  tabs.forEach((el, i) => { const on = 1 - Math.min(1, Math.abs(t - i)); el.style.color = `color-mix(in srgb, var(--ink) ${on*100}%, var(--ink-3))`; });
-  const r0 = tabs[0].getBoundingClientRect(), r1 = tabs[1].getBoundingClientRect(), base = tabs[0].parentElement.getBoundingClientRect();
-  const off = i => base.right - [r0, r1][i].right, wid = i => [r0, r1][i].width - 24;
-  tabInd.style.transform = `translateX(${-(off(0) + (off(1) - off(0)) * t)}px)`;
-  tabInd.style.width = (wid(0) + (wid(1) - wid(0)) * t) + 'px';
-  fab.style.transform = ''; scan.hidden = t < .5;
-});
-tabs.forEach(el => el.onclick = () => { buzz(); tabSpring.to(+el.dataset.i); });
-// horizontal swipe between panes (RTL: finger to the right → next tab)
-panes.forEach(pn => {
-  let st = null;
-  pn.addEventListener('touchstart', e => { const t = e.touches[0]; st = { x: t.clientX, y: t.clientY, t0: tabT, on: null, tr: tracker() }; }, { passive: true });
-  pn.addEventListener('touchmove', e => {
-    if (!st) return; const t = e.touches[0], dx = t.clientX - st.x, dy = t.clientY - st.y;
-    if (st.on == null && Math.hypot(dx, dy) > 8) st.on = Math.abs(dx) > Math.abs(dy) * 1.3;
-    if (!st.on) return;
-    let v = st.t0 + dx / device.clientWidth; if (v < 0) v *= .25; if (v > 1) v = 1 + (v - 1) * .25;
-    st.tr.add(dx / device.clientWidth); tabSpring.set(v);
-  }, { passive: true });
-  pn.addEventListener('touchend', () => { if (!st) return; if (st.on) { const v = st.tr.vel(); let to = Math.round(tabT + v * .18); to = Math.max(0, Math.min(1, to)); if (to !== Math.round(st.t0)) buzz(); tabSpring.to(to, MOTION.glide, v); } st = null; });
-});
+/* ================================================================ spring (pages, sheets) — interruptible, keeps velocity */
+class Spring {
+  constructor(v, on) { this.v = v; this.vel = 0; this.t = v; this.on = on; this.raf = 0; }
+  set(v) { cancelAnimationFrame(this.raf); this.raf = 0; this.v = this.t = v; this.vel = 0; this.on(v); }
+  to(t, k = 260, c = 30, vel) { this.t = t; this.k = k; this.c = c; if (vel != null) this.vel = vel;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { this.set(t); return Promise.resolve(); }
+    return new Promise(res => { this.res = res; if (!this.raf) { this.last = performance.now(); this.raf = requestAnimationFrame(this.tick); } }); }
+  tick = now => { const dt = Math.min(.05, (now - this.last) / 1000); this.last = now; const n = Math.max(1, Math.ceil(dt * 480)), h = dt / n;
+    for (let i = 0; i < n; i++) { this.vel += (-this.k * (this.v - this.t) - this.c * this.vel) * h; this.v += this.vel * h; }
+    if (Math.abs(this.v - this.t) < .0008 && Math.abs(this.vel) < .01) { this.v = this.t; this.raf = 0; this.on(this.v); this.res && this.res(); return; }
+    this.on(this.v); this.raf = requestAnimationFrame(this.tick); };
+}
+const buzz = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
 
-/* ---------------------------------------------------------------- number tween on the glide spring */
-const tweens = new WeakMap();
-function tween(el, to, fmt) {
-  let s = tweens.get(el);
-  if (!s) { s = new Spring(to, v => el.innerHTML = fmt(v)); tweens.set(el, s); s.set(to); return; }
-  s.on = v => el.innerHTML = fmt(v); s.to(to);
+/* counted numbers (ease-out quart) */
+const counters = new WeakMap();
+function countTo(el, to, render) {
+  const prev = counters.get(el); counters.set(el, { to, raf: 0 });
+  if (prev && prev.raf) cancelAnimationFrame(prev.raf);
+  const from = prev ? (prev.shown ?? prev.to) : to;
+  if (from === to) { el.innerHTML = render(to); counters.get(el).shown = to; return; }
+  const t0 = performance.now(), me = counters.get(el);
+  const step = t => { const p = Math.min(1, (t - t0) / 600), v = from + (to - from) * (1 - Math.pow(1 - p, 4)); me.shown = v; el.innerHTML = render(v); if (p < 1) me.raf = requestAnimationFrame(step); else me.raf = 0; };
+  me.raf = requestAnimationFrame(step);
 }
 
-/* ---------------------------------------------------------------- recipes list */
-function renderRecipes() {
-  const cats = ['הכל', ...new Set(RECIPES.map(r => r.cat))];
-  catFilters.innerHTML = cats.map(c => `<button class="filter ${c === S.recipeCat ? 'on' : ''}" data-c="${c}">${c}</button>`).join('');
-  catFilters.querySelectorAll('button').forEach(b => b.onclick = () => { S.recipeCat = b.dataset.c; renderRecipes(); });
-  const list = RECIPES.filter(r => S.recipeCat === 'הכל' || r.cat === S.recipeCat);
-  cards.innerHTML = list.map((r, i) => {
+/* ================================================================ tab bar */
+const TABS = [['recipes', 'מתכונים'], ['products', 'מוצרים'], null, ['list', 'קניות'], ['settings', 'הגדרות']];
+function renderTabbar(popId) {
+  tabbar.innerHTML = TABS.map(t => t ? `<button class="tab ${S.tab === t[0] ? 'on' : ''}" data-t="${t[0]}" aria-label="${t[1]}" ${S.tab === t[0] ? 'aria-current="page"' : ''}><span class="${popId === t[0] ? 'pop' : ''}">${NAV[t[0]](S.tab === t[0])}</span><span class="l">${t[1]}</span><span class="d"></span></button>`
+    : `<div class="plus-wrap"><button class="plus sticker" id="plus" aria-label="הוספה">${li('plus', 3.2)}</button></div>`).join('');
+  tabbar.querySelectorAll('.tab').forEach(b => b.onclick = () => go(b.dataset.t));
+  plus.onclick = openAdd;
+}
+function go(t) {
+  const el = document.getElementById('s-' + t);
+  if (t === S.tab) { el.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  buzz(); S.tab = t;
+  for (const id of ['recipes', 'products', 'list', 'settings']) document.getElementById('s-' + id).hidden = id !== t;
+  renderTabbar(t); render[t]();
+  el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 400, easing: 'cubic-bezier(.22,1,.36,1)' });
+}
+
+/* ================================================================ screens */
+const render = {};
+const searchBox = (id, val, ph) => `<label class="search">${li('search')}<input id="${id}" value="${val}" placeholder="${ph}" autocomplete="off" enterkeyhint="search" type="search"><button class="clr" data-clr="${id}" aria-label="ניקוי" ${val ? '' : 'hidden'}>${li('close', 2.6)}</button></label>`;
+function bindSearch(root, id, key, redraw) {
+  const inp = root.querySelector('#' + id), c = root.querySelector(`[data-clr="${id}"]`);
+  let t; inp.oninput = () => { S[key] = inp.value; c.hidden = !inp.value; clearTimeout(t); t = setTimeout(redraw, 90); };
+  c.onclick = e => { e.preventDefault(); inp.value = S[key] = ''; c.hidden = true; redraw(); inp.focus(); };
+}
+
+render.recipes = () => {
+  const el = document.getElementById('s-recipes');
+  el.innerHTML = `<div class="appbar"><div><h1>מתכונים</h1><div class="sub">${RECIPES.length} מתכונים · תמחיר לפי ${S.city}</div></div></div>
+    ${searchBox('rq', S.rq, 'חיפוש מתכון או מרכיב')}
+    <div class="cats hide-scroll">${RCATS.map(c => `<button class="cat press ${S.rcat === c.id ? 'on' : ''}" data-c="${c.id}">${CAT_ICON[c.id]}${c.name}</button>`).join('')}</div>
+    <div id="rlist"></div>`;
+  el.querySelectorAll('.cat').forEach(b => b.onclick = () => { buzz(); S.rcat = b.dataset.c; el.querySelectorAll('.cat').forEach(x => x.classList.toggle('on', x === b)); drawRecipeList(); });
+  bindSearch(el, 'rq', 'rq', drawRecipeList);
+  drawRecipeList();
+};
+function drawRecipeList() {
+  const box = document.getElementById('rlist'); if (!box) return;
+  const q = S.rq.trim();
+  const list = RECIPES.filter(r => (S.rcat === 'all' || r.cat === S.rcat) && (!q || r.name.includes(q) || r.ing.some(([id]) => prod(id).name.includes(q))));
+  box.innerHTML = list.length ? `<div class="rgrid">${list.map((r, i) => {
     const c = costing(r, r.yield);
-    return `<button class="rcard sq press" data-id="${r.id}" style="background:var(${r.color});--i:${i}">
-      <div><h3>${r.name}</h3><div class="meta">${r.yield} ${r.word} · ${r.time}</div>
-      <div class="price"><b class="num">${ils(c.perUnit)}</b><span>ל${r.word === 'ריבועים' ? 'ריבוע' : 'עוגייה'}</span></div></div>
-      <div class="art">${art(r)}</div></button>`;
-  }).join('');
-  cards.querySelectorAll('.rcard').forEach(el => el.onclick = () => openRecipe(RECIPES.find(r => r.id === el.dataset.id)));
-  c0.textContent = RECIPES.length;
-  stagger(cards.children);
-}
-function stagger(nodes) {
-  if (reduce) return;
-  [...nodes].forEach((el, i) => el.animate([{ transform: 'translateY(18px)', opacity: 0 }, { transform: 'none', opacity: 1 }],
-    { duration: 520, delay: i * 45, easing: getComputedStyle(document.documentElement).getPropertyValue('--ease-glide') || 'ease-out', fill: 'backwards' }));
+    return `<button class="rcard press rise" style="animation-delay:${i * 40}ms" data-id="${r.id}">
+      <div class="photo" style="background:var(${r.tint})">${cover(r)}<span class="badge">${li('clock', 2.4)}${r.time} דק׳</span></div>
+      <div class="t">${r.name}</div>
+      <div class="m">${money(c.perUnit, 19)}<small>ל${r.one}</small></div></button>`; }).join('')}</div>`
+    : `<div class="empty">${CAT_ICON.cookies}<b>לא נמצא מתכון</b><p>נסו שם אחר או מרכיב, למשל “חמאה”.</p></div>`;
+  box.querySelectorAll('.rcard').forEach(b => b.onclick = () => openRecipe(RECIPES.find(r => r.id === b.dataset.id)));
 }
 
-/* ---------------------------------------------------------------- products list */
-function renderProducts(animate = true) {
-  cityBtn.innerHTML = `${ic('pin')}<span>${S.city}</span>`;
-  const q = S.q.trim();
-  const list = PRODUCTS.filter(p => (S.prodFilter === 'all' || S.favs.has(p.id)) && (!q || p.name.includes(q) || p.code.includes(q) || p.brand.includes(q)));
-  if (!list.length) {
-    plist.innerHTML = S.prodFilter === 'fav' && !q
-      ? `<div class="empty"><b>אין עדיין מועדפים</b>סמנו כוכב במוצר כדי לראות אותו כאן, ולקבל התראה כשהמחיר יורד.</div>`
-      : `<div class="empty"><b>לא נמצא מוצר</b>נסו שם אחר, או סרקו את הברקוד.</div>`;
-  } else {
-    plist.innerHTML = `<div class="plist">${list.map(p => {
-      const o = offers(p)[0], man = S.manual[p.id] != null;
-      return `<button class="prow press" data-id="${p.id}">
-        <span class="pic sq" style="background:var(${p.color})">${ic(p.icon)}</span>
-        <span><span class="nm">${p.name}${S.favs.has(p.id) ? ic('star', 1) : ''}</span><span class="sz">${sizeLabel(p)}</span></span>
-        <span class="pr"><b class="num">${ils(unitPrice(p))}</b><small>${man ? '<span class="tag muted">ידני</span>' : o.chain.name}</small></span></button>`;
-    }).join('')}</div>`;
-    plist.querySelectorAll('.prow').forEach(el => el.onclick = () => openProduct(prod(el.dataset.id)));
-    if (animate) stagger(plist.querySelector('.plist').children);
-  }
-  c1.textContent = PRODUCTS.length;
+render.products = () => {
+  const el = document.getElementById('s-products');
+  const cats = [{ id: 'all', name: 'הכל' }, { id: 'fav', name: 'מועדפים' }, ...CATS];
+  el.innerHTML = `<div class="appbar"><div><h1>מוצרים</h1><div class="sub">מהזול ליקר · עודכן היום 06:10</div></div>
+      <button class="pill citypill press" id="cityBtn">${PIN}${S.city}</button></div>
+    ${searchBox('pq', S.pq, 'חיפוש מוצר, מותג או ברקוד')}
+    <div class="cats hide-scroll">${cats.map(c => `<button class="cat press ${S.pcat === c.id ? 'on' : ''}" data-c="${c.id}">${CAT_ICON[c.id]}${c.name}</button>`).join('')}</div>
+    <div id="plist"></div>`;
+  el.querySelector('#cityBtn').onclick = () => openCity();
+  el.querySelectorAll('.cat').forEach(b => b.onclick = () => { buzz(); S.pcat = b.dataset.c; el.querySelectorAll('.cat').forEach(x => x.classList.toggle('on', x === b)); drawProductList(); });
+  bindSearch(el, 'pq', 'pq', drawProductList);
+  drawProductList();
+};
+function drawProductList() {
+  const box = document.getElementById('plist'); if (!box) return;
+  const q = S.pq.trim();
+  const match = p => (!q || p.name.includes(q) || p.brand.includes(q) || p.code.includes(q)) && (S.pcat === 'all' || (S.pcat === 'fav' ? S.favs.has(p.id) : p.cat === S.pcat));
+  const groups = CATS.map(c => ({ c, items: PRODUCTS.filter(p => p.cat === c.id && match(p)) })).filter(g => g.items.length);
+  let i = 0;
+  box.innerHTML = groups.length ? groups.map(g => `<div class="h2"><b>${g.c.name}</b><span>${g.items.length} מוצרים</span></div>
+    <div class="pgrid">${g.items.map(p => { const o = offers(p)[0], man = S.manual[p.id] != null;
+      return `<button class="ptile press rise" style="animation-delay:${Math.min(i++, 8) * 30}ms" data-id="${p.id}">
+        <div class="pimg">${img(p)}</div>
+        ${S.favs.has(p.id) ? `<span class="fav">${CAT_ICON.fav}</span>` : ''}
+        <div class="t">${p.name}</div><div class="s">${size(p)}</div>
+        <div class="m">${money(unitPrice(p), 18)}<small>${man ? 'מחיר שלי' : o.chain.name}</small></div></button>`; }).join('')}</div>`).join('')
+    : S.pcat === 'fav' && !q ? `<div class="empty">${CAT_ICON.fav}<b>אין עדיין מועדפים</b><p>לחצו על הלב בדף המוצר כדי לשמור אותו כאן ולקבל התראה כשהמחיר יורד.</p></div>`
+    : `<div class="empty">${SCAN}<b>לא נמצא מוצר</b><p>נסו שם אחר, או סרקו את הברקוד מכפתור ה־+.</p></div>`;
+  box.querySelectorAll('.ptile').forEach(b => b.onclick = () => openProduct(prod(b.dataset.id)));
 }
-prodFilters.querySelectorAll('button').forEach(b => b.onclick = () => {
-  S.prodFilter = b.dataset.f; prodFilters.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); renderProducts();
-});
-searchIcon.innerHTML = ic('search');
-q.oninput = () => { S.q = q.value; renderProducts(false); };
-cityBtn.onclick = () => openCity();
 
-/* ---------------------------------------------------------------- sheets: glide in, drag to dismiss (velocity carried) */
-const stackOfSheets = [];
-function sheet(html, { onClose } = {}) {
-  const scrim = document.createElement('div'); scrim.className = 'scrim';
-  const el = document.createElement('div'); el.className = 'sheet'; el.setAttribute('role', 'dialog');
-  el.innerHTML = `<div class="grab"></div><div class="body">${html}</div>`;
-  device.append(scrim, el);
-  const z = 20 + stackOfSheets.length * 2; scrim.style.zIndex = z; el.style.zIndex = z + 1;
-  const h = () => el.offsetHeight;
-  const s = new Spring(1, v => { el.style.transform = `translateY(${v * 100}%)`; scrim.style.opacity = 1 - v; });
-  s.set(1); s.to(0);
-  const api = { el, body: el.querySelector('.body'), close };
-  stackOfSheets.push(api);
-  let closing = false;
-  async function close(vel) { if (closing) return; closing = true; stackOfSheets.splice(stackOfSheets.indexOf(api), 1); scrim.style.pointerEvents = 'none'; await s.to(1, MOTION.glide, vel); el.remove(); scrim.remove(); onClose && onClose(); }
-  scrim.onclick = () => close();
-  // drag: from the grab handle anywhere, or from the body when scrolled to top
-  let st = null; const body = api.body;
-  const down = (y, fromBody) => { if (fromBody && body.scrollTop > 0) return; st = { y, armed: !fromBody, tr: tracker() }; };
-  const move = (y, e) => { if (!st) return; const dy = y - st.y; if (!st.armed) { if (dy > 6 && body.scrollTop <= 0) { st.armed = true; st.y = y; } else if (dy < -4) { st = null; } return; }
-    e && e.cancelable && e.preventDefault(); const v = Math.max(-.02, (y - st.y) / h()); st.tr.add(v); s.set(v < 0 ? v * .3 : v); };
-  const up = () => { if (!st) return; if (st.armed) { const v = st.tr.vel(); if (s.v > .28 || v > 1.2) close(v); else s.to(0, MOTION.touch, v); } st = null; };
-  el.querySelector('.grab').addEventListener('pointerdown', e => { e.target.setPointerCapture(e.pointerId); down(e.clientY, false); });
-  el.querySelector('.grab').addEventListener('pointermove', e => move(e.clientY));
-  el.querySelector('.grab').addEventListener('pointerup', up);
-  body.addEventListener('touchstart', e => down(e.touches[0].clientY, true), { passive: true });
-  body.addEventListener('touchmove', e => move(e.touches[0].clientY, e), { passive: false });
-  body.addEventListener('touchend', up);
-  return api;
-}
-addEventListener('keydown', e => { if (e.key === 'Escape' && stackOfSheets.length) stackOfSheets[stackOfSheets.length - 1].close(); });
+render.list = () => {
+  const el = document.getElementById('s-list');
+  const need = new Map();
+  for (const [rid, units] of S.list) { const r = RECIPES.find(x => x.id === rid); for (const [id, q] of r.ing) need.set(id, (need.get(id) || 0) + q * units / r.yield); }
+  const items = [...need].map(([id, q]) => { const p = prod(id); return { p, q, packs: Math.ceil(q / p.pack - 1e-9) }; });
+  const totals = CHAINS.map(ch => { let sum = 0; for (const it of items) { const o = offers(it.p).find(x => x.chain.id === ch.id); if (!o) return null; sum += o.price * it.packs; } return { ch, sum }; }).filter(Boolean).sort((a, b) => a.sum - b.sum).slice(0, 3);
+  const doneCount = () => `${items.filter(it => S.got.has(it.p.id)).length}/${items.length}`;
+  el.innerHTML = `<div class="appbar"><div><h1>קניות</h1><div class="sub">${items.length} מוצרים · ${S.list.length} מתכונים</div></div></div>
+    <div class="h2" style="margin-top:6px"><b>הסל הכי זול ב${S.city}</b></div>
+    <div class="basket">${totals.map((t, i) => `<div class="${i === 0 ? 'best' : ''}"><small>${t.ch.name}</small>${money(t.sum, 20, 0)}</div>`).join('')}</div>
+    <div class="h2"><b>מתכונים ברשימה</b></div>
+    <div class="card rows">${S.list.map(([rid, u]) => { const r = RECIPES.find(x => x.id === rid);
+      return `<div class="row"><span class="thumb" style="background:var(${r.tint})">${cover(r)}</span><span class="grow ttl">${r.name}<small>${u} ${r.word}</small></span>
+        <span class="mini"><button data-l="${rid}" data-d="-1" aria-label="פחות">${li('minus', 2.6)}</button><span class="num">×${+(u / r.yield).toFixed(1)}</span><button data-l="${rid}" data-d="1" aria-label="יותר">${li('plus', 2.6)}</button></span></div>`; }).join('')}</div>
+    <div class="h2"><b>מה לקנות</b><span id="gotN">${doneCount()}</span></div>
+    <div class="card rows">${items.map(it => `<button class="row ${S.got.has(it.p.id) ? 'done' : ''}" data-g="${it.p.id}"><span class="check ${S.got.has(it.p.id) ? 'on' : ''}">${li('check', 3)}</span>
+      <span class="thumb">${img(it.p)}</span><span class="grow ttl">${it.p.name}<small>${it.packs} × ${qty(it.p.pack, it.p.unit)} · צריך ${qty(it.q, it.p.unit)}</small></span>
+      <span class="end">${money(unitPrice(it.p) * it.packs, 15)}</span></button>`).join('')}</div>`;
+  el.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { buzz(); const id = b.dataset.g; S.got.has(id) ? S.got.delete(id) : S.got.add(id); save();
+    b.classList.toggle('done'); b.querySelector('.check').classList.toggle('on'); el.querySelector('#gotN').textContent = doneCount(); });
+  el.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { buzz(); const e = S.list.find(x => x[0] === b.dataset.l), r = RECIPES.find(x => x.id === e[0]);
+    e[1] = Math.max(Math.round(r.yield / 2), e[1] + Math.round(r.yield / 2) * +b.dataset.d); save(); render.list(); });
+};
 
-function segmented(container, values, current, onPick) {
-  container.innerHTML = `<span class="thumb"></span>` + values.map(([v, l]) => `<button data-v="${v}">${l}</button>`).join('');
-  const th = container.querySelector('.thumb'), btns = [...container.querySelectorAll('button')];
-  let pos = null;
-  const sp = new Spring(0, v => { const a = btns[Math.floor(v)], b = btns[Math.min(btns.length - 1, Math.ceil(v))], f = v - Math.floor(v);
-    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(), rc = container.getBoundingClientRect();
-    const left = ra.left + (rb.left - ra.left) * f - rc.left, w = ra.width + (rb.width - ra.width) * f;
-    th.style.left = left + 'px'; th.style.width = w + 'px'; });
-  function set(v, anim) { const i = values.findIndex(x => String(x[0]) === String(v)); btns.forEach((b, j) => b.classList.toggle('on', j === i));
-    if (i < 0) { th.style.opacity = 0; return; } th.style.opacity = 1; if (anim && pos != null) sp.to(i, MOTION.touch); else sp.set(i); pos = i; }
-  btns.forEach(b => b.onclick = () => { buzz(); set(b.dataset.v, true); onPick(b.dataset.v); });
-  requestAnimationFrame(() => set(current, false));
+render.settings = () => {
+  const el = document.getElementById('s-settings'), N = S.notif;
+  const sw = k => `<button class="sw ${N[k] ? 'on' : ''}" data-n="${k}" role="switch" aria-checked="${!!N[k]}"></button>`;
+  el.innerHTML = `<div class="appbar"><div><h1>הגדרות</h1></div></div>
+    <div class="h2" style="margin-top:6px"><b>מחירים</b></div>
+    <div class="card rows"><button class="row" id="setCity"><span class="ico" style="background:var(--t-rose)">${PIN}</span><span class="grow ttl">עיר<small>לפיה מסודרים המחירים</small></span><span class="end">${S.city}</span><span class="chev">${li('chev')}</span></button></div>
+    <div class="h2"><b>התראות מחירים</b></div>
+    <div class="card rows">
+      <div class="row"><span class="ico" style="background:var(--t-butter)">${TAG}</span><span class="grow ttl">ירידת מחיר<small>למוצרים שהגדרתם להם סף</small></span>${sw('drop')}</div>
+      <div class="row"><span class="ico" style="background:var(--t-sky)">${BELL}</span><span class="grow ttl">סיכום מחירים שבועי<small>יום חמישי, 18:00</small></span>${sw('weekly')}</div></div>
+    <div class="h2"><b>התראות לפי מיקום</b></div>
+    <div class="card rows">
+      <div class="row"><span class="ico" style="background:var(--t-rose)">${PIN}</span><span class="grow ttl">כשנכנסים לסופר<small>רשימת הקניות והמחירים בסניף</small></span>${sw('enter')}</div>
+      <div id="chainsRow" ${N.enter ? '' : 'hidden'}><div class="chips">${CHAINS.map(c => `<button class="chip press ${N.chains.includes(c.id) ? 'on' : ''}" data-c="${c.id}">${c.name}</button>`).join('')}</div></div>
+      <div class="row"><span class="ico" style="background:var(--t-mint)">${PIN}</span><span class="grow ttl">החלפת עיר אוטומטית<small>כשמגיעים לעיר אחרת</small></span>${sw('cityAuto')}</div></div>
+    <div class="h2"><b>התראות לפי זמן</b></div>
+    <div class="card rows">
+      <div class="row"><span class="ico" style="background:var(--t-lav)">${NAV.list(true)}</span><span class="grow ttl">תזכורת לקניות<small>יום שישי, 09:00</small></span>${sw('list')}</div>
+      <div class="row"><span class="ico" style="background:var(--t-lav)">${CLOCKI}</span><span class="grow ttl">שעות שקטות<small>22:00–07:00</small></span>${sw('quiet')}</div></div>
+    <div class="h2"><b>מראה</b></div>
+    <div class="card" style="padding:14px"><div class="seg" id="themeSeg"></div><div style="display:flex;gap:14px;padding:16px 4px 4px" id="accents"></div></div>
+    <div class="h2"><b>אפליקציה</b></div>
+    <div class="card rows"><button class="row" id="upd"><span class="ico" style="background:var(--good-soft)">${DL}</span><span class="grow ttl">בדיקת עדכונים<small>גרסה 0.1.0</small></span><span class="chev">${li('chev')}</span></button></div>
+    <div class="foot">אב־טיפוס · המחירים והסניפים לדוגמה · תמונות המוצרים מ־Open Food Facts</div>`;
+  el.querySelector('#setCity').onclick = () => openCity();
+  el.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { buzz(); const k = b.dataset.n; N[k] = !N[k]; save(); b.classList.toggle('on', N[k]); b.setAttribute('aria-checked', N[k]);
+    if (k === 'enter') { el.querySelector('#chainsRow').hidden = !N.enter; if (N.enter) toast(PIN, 'האפליקציה תבקש הרשאת מיקום “כל הזמן”'); } });
+  el.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { buzz(); const i = N.chains.indexOf(b.dataset.c); i < 0 ? N.chains.push(b.dataset.c) : N.chains.splice(i, 1); save(); b.classList.toggle('on'); });
+  segmented(el.querySelector('#themeSeg'), [['system', 'אוטומטי'], ['light', 'בהיר'], ['dark', 'כהה']], S.theme, v => { S.theme = v; save(); applyLook(); });
+  const AC = [['caramel', '#F08A24', 'קרמל'], ['pistachio', '#3DB86B', 'פיסטוק'], ['berry', '#F0507E', 'פטל'], ['blueberry', '#6A7CFF', 'אוכמניות']];
+  const drawAc = () => el.querySelector('#accents').innerHTML = AC.map(([k, c, n]) => `<button class="press" data-a="${k}" aria-label="${n}" style="width:44px;height:44px;border-radius:50%;background:${c};border:2.5px solid var(--stroke);box-shadow:${S.accent === k ? '0 0 0 3px var(--surface), 0 0 0 5.5px var(--ink)' : '0 3px 0 var(--stroke)'}"></button>`).join('');
+  drawAc(); el.querySelector('#accents').onclick = e => { const b = e.target.closest('[data-a]'); if (!b) return; buzz(); S.accent = b.dataset.a; save(); applyLook(); drawAc(); };
+  el.querySelector('#upd').onclick = () => toast(DL, 'יש לכם את הגרסה האחרונה');
+};
+
+function segmented(box, opts, val, pick) {
+  box.innerHTML = `<span class="th"></span>` + opts.map(([v, l]) => `<button data-v="${v}">${l}</button>`).join('');
+  const th = box.querySelector('.th'), bs = [...box.querySelectorAll('button')];
+  const set = v => { const b = bs.find(x => x.dataset.v === String(v)); bs.forEach(x => x.classList.toggle('on', x === b)); th.style.opacity = b ? 1 : 0; if (b) { th.style.left = b.offsetLeft + 'px'; th.style.width = b.offsetWidth + 'px'; } };
+  bs.forEach(b => b.onclick = () => { if (b.classList.contains('on')) return; buzz(); set(b.dataset.v); pick(b.dataset.v); });
+  th.style.transition = 'none'; requestAnimationFrame(() => { set(val); requestAnimationFrame(() => th.style.transition = ''); });
   return { set };
 }
 
-/* ---------------------------------------------------------------- recipe sheet */
+/* ================================================================ pushed pages (enter from the left in RTL; back button, Esc or edge swipe) */
+const pages = [];
+const under = () => pages.length > 1 ? pages[pages.length - 2].el : document.getElementById('s-' + S.tab);
+function page(html, onClose) {
+  const el = document.createElement('div'); el.className = 'page'; el.innerHTML = html; device.append(el);
+  const api = { el, close }; pages.push(api);
+  const below = under();
+  const sp = new Spring(1, v => { el.style.transform = `translateX(${-v * 100}%)`; below.style.transform = `translateX(${(1 - v) * 24}%)`; });
+  sp.set(1); sp.to(0);
+  tabbar.classList.add('away');
+  async function close(vel) { if (api.closing) return; api.closing = true; await sp.to(1, 260, 30, vel); pages.splice(pages.indexOf(api), 1); el.remove(); below.style.transform = '';
+    if (!pages.length) tabbar.classList.remove('away'); onClose && onClose(); }
+  el.querySelector('[data-back]').onclick = () => { buzz(); close(); };
+  let d = null; const W = () => device.clientWidth;
+  el.addEventListener('touchstart', e => { const t = e.touches[0]; if (t.clientX - device.getBoundingClientRect().left < 28) d = { x: t.clientX, pts: [] }; }, { passive: true });
+  el.addEventListener('touchmove', e => { if (!d) return; const dx = Math.max(0, e.touches[0].clientX - d.x); d.pts.push([performance.now(), dx / W()]); sp.set(dx / W()); }, { passive: true });
+  el.addEventListener('touchend', () => { if (!d) return; const p = d.pts, v = p.length > 1 ? (p[p.length - 1][1] - p[0][1]) / ((p[p.length - 1][0] - p[0][0]) / 1000 || 1) : 0;
+    sp.v > .35 || v > 1 ? close(v) : sp.to(0, 400, 32, v); d = null; });
+  return api;
+}
+addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (sheets.length) sheets[sheets.length - 1].close(); else if (pages.length) pages[pages.length - 1].close(); });
+
+/* ================================================================ bottom sheets (drag down to dismiss) */
+const sheets = [];
+function sheet(html, onClose) {
+  const scrim = document.createElement('div'); scrim.className = 'scrim';
+  const el = document.createElement('div'); el.className = 'sheet'; el.setAttribute('role', 'dialog');
+  el.innerHTML = `<div class="grab"></div><div class="in">${html}</div>`; device.append(scrim, el);
+  const z = 60 + sheets.length * 2; scrim.style.zIndex = z; el.style.zIndex = z + 1;
+  const sp = new Spring(1, v => { el.style.transform = `translateY(${v * 100}%)`; scrim.style.opacity = 1 - Math.max(0, v); }); sp.set(1); sp.to(0, 300, 30);
+  const api = { el, close }; sheets.push(api);
+  async function close(vel) { if (api.closing) return; api.closing = true; sheets.splice(sheets.indexOf(api), 1); scrim.style.pointerEvents = 'none'; await sp.to(1, 300, 32, vel); el.remove(); scrim.remove(); onClose && onClose(); }
+  scrim.onclick = () => close();
+  const grab = el.querySelector('.grab'), inner = el.querySelector('.in'); let d = null;
+  const start = (y, fromInner) => { if (fromInner && inner.scrollTop > 0) return; d = { y, armed: !fromInner, pts: [] }; };
+  const move = (y, e) => { if (!d) return; const dy = y - d.y; if (!d.armed) { if (dy > 6) { d.armed = true; d.y = y; } else if (dy < -4) d = null; return; }
+    if (e && e.cancelable) e.preventDefault(); const v = (y - d.y) / el.offsetHeight; d.pts.push([performance.now(), v]); sp.set(v < 0 ? v * .25 : v); };
+  const end = () => { if (!d) return; if (d.armed) { const p = d.pts, v = p.length > 1 ? (p[p.length - 1][1] - p[0][1]) / ((p[p.length - 1][0] - p[0][0]) / 1000 || 1) : 0; sp.v > .28 || v > 1.2 ? close(v) : sp.to(0, 420, 28, v); } d = null; };
+  grab.onpointerdown = e => { grab.setPointerCapture(e.pointerId); start(e.clientY, false); }; grab.onpointermove = e => move(e.clientY); grab.onpointerup = end;
+  inner.addEventListener('touchstart', e => start(e.touches[0].clientY, true), { passive: true });
+  inner.addEventListener('touchmove', e => move(e.touches[0].clientY, e), { passive: false });
+  inner.addEventListener('touchend', end);
+  return api;
+}
+
+/* numeric keypad — amounts never open the system keyboard */
+function keypadSheet(title, lead, initial, onDone) {
+  let a = initial ? String(+initial.toFixed(2)) : '';
+  const sh = sheet(`<h3>${title}</h3><div class="lead">${lead}</div><div class="amount" id="amt"></div>
+    <div class="keypad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'].map(k => `<button class="press" data-k="${k}" aria-label="${k === 'back' ? 'מחיקה' : k}">${k === 'back' ? li('backspace', 2) : k}</button>`).join('')}</div>
+    <button class="sticker cta" id="kpOk">שמירה</button>`);
+  const amt = sh.el.querySelector('#amt'), show = () => amt.innerHTML = `<span class="money"><i>₪</i><b>${a || '0'}</b></span>`;
+  sh.el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { buzz(); const k = b.dataset.k;
+    if (k === 'back') a = a.slice(0, -1); else if (k === '.') { if (!a.includes('.')) a = (a || '0') + '.'; }
+    else if (!(a.includes('.') && a.split('.')[1].length >= 2) && a.replace('.', '').length < 6) a = (a === '0' ? '' : a) + k;
+    show(); });
+  sh.el.querySelector('#kpOk').onclick = () => { const v = parseFloat(a); if (!(v > 0)) { amt.animate([{ transform: 'none' }, { transform: 'translateX(8px)' }, { transform: 'translateX(-8px)' }, { transform: 'none' }], 260); return; } buzz(); sh.close(); onDone(v); };
+  show(); return sh;
+}
+
+/* ================================================================ recipe page */
 function openRecipe(r) {
-  let units = r.yield, sell = r.sell, photoIdx = 0;
-  const sh = sheet(`
-    <div class="hero"><div class="bgc sq" style="background:var(${r.color})"></div>
-      <div class="art" id="rArt">${art(r)}</div>
-      <div class="dots" id="rDots"></div>
-      <label class="cam press" aria-label="העלאת תמונה">${ic('camera')}<input type="file" accept="image/*" id="rFile" hidden></label></div>
-    <h2>${r.name}</h2><div class="sub">${r.cat} · ${r.time}</div>
+  let units = r.yield, sell = r.sell;
+  const pg = page(`<div class="bar"><button class="rb press" data-back aria-label="חזרה">${li('back', 2.4)}</button>
+      <label class="rb press" aria-label="הוספת תמונה" style="cursor:pointer">${li('camera', 2)}<input type="file" accept="image/*" id="file" hidden></label></div>
+    <div class="hero" id="hero" style="background:var(${r.tint})">${cover(r)}</div>
+    <div class="sheetbody">
+      <h1>${r.name}</h1>
+      <div class="meta"><span class="pill">${li('clock', 2.2)}${r.time} דק׳</span><span class="pill accent" id="mUnit"></span><span class="pill">${r.ing.length} מרכיבים</span></div>
+      <div class="gallery hide-scroll" id="gal"></div>
 
-    <div class="section"><div class="label">כמות</div>
-      <div class="box">
-        <div class="yield"><button class="round press" id="yMinus" aria-label="פחות">${ic('minus')}</button>
-          <div><div class="big num" id="yBig"></div><div class="unit">${r.word} · גררו למעלה או למטה</div></div>
-          <button class="round press" id="yPlus" aria-label="יותר">${ic('plus')}</button></div>
-        <div class="seg" id="mult"></div>
-      </div></div>
+      <div class="h2"><b>כמות</b></div>
+      <div class="card"><div class="yield"><button class="rbtn press" id="yM" aria-label="פחות">${li('minus', 2.6)}</button>
+        <div class="mid"><b class="num" id="yN"></b><small>${r.word}</small></div><button class="rbtn press" id="yP" aria-label="יותר">${li('plus', 2.6)}</button></div>
+        <div style="padding:0 14px 14px"><div class="seg" id="mult"></div></div></div>
 
-    <div class="section"><div class="label"><span>מרכיבים</span><span class="num" id="ingSum"></span></div>
-      <div class="box" id="ings"></div></div>
+      <div class="h2"><b>מרכיבים</b><span id="ingSum"></span></div>
+      <div class="card rows" id="ings"></div>
 
-    <div class="section"><div class="label">תמחיר · ${S.city}</div>
-      <div class="cost">
-        <div class="line"><span class="k">מרכיבים</span><span class="v num" id="cIng"></span></div>
-        <div class="line"><span class="k">אריזה<small>לכל יחידה</small></span><span class="v"><span class="mini"><button id="pkM" aria-label="פחות">${ic('minus')}</button><span class="num" id="pkV"></span><button id="pkP" aria-label="יותר">${ic('plus')}</button></span></span></div>
-        <div class="line"><span class="k">גז וחשמל<small>אחוז מהמרכיבים</small></span><span class="v"><span class="mini"><button id="gsM" aria-label="פחות">${ic('minus')}</button><span class="num" id="gsV"></span><button id="gsP" aria-label="יותר">${ic('plus')}</button></span></span></div>
-        <div class="line"><span class="k">עבודה<small>למגש של ${r.yield}</small></span><span class="v"><span class="mini"><button id="lbM" aria-label="פחות">${ic('minus')}</button><span class="num" id="lbV"></span><button id="lbP" aria-label="יותר">${ic('plus')}</button></span></span></div>
-        <div class="total"><div><span class="lbl">ליחידה</span><b class="num" id="cUnit"></b></div>
-          <div class="side">סה״כ<br><b class="num" id="cTot"></b></div></div>
+      <div class="h2"><b>תמחיר</b><span>לפי ${S.city}</span></div>
+      <div class="card">
+        <div class="big"><div><div class="lbl">עלות ל${r.one}</div><span id="cUnit"></span></div><div style="text-align:end"><div class="lbl">סה״כ</div><span id="cTot"></span></div></div>
+        <div class="rows">
+          <div class="row"><span class="grow ttl">מרכיבים</span><span class="end" id="cIng"></span></div>
+          <div class="row"><span class="grow ttl">אריזה<small>לכל ${r.one}</small></span><span class="mini"><button id="pkM" aria-label="פחות">${li('minus', 2.6)}</button><span class="num" id="pkV"></span><button id="pkP" aria-label="יותר">${li('plus', 2.6)}</button></span></div>
+          <div class="row"><span class="grow ttl">גז וחשמל<small>אחוז מהמרכיבים</small></span><span class="mini"><button id="gsM" aria-label="פחות">${li('minus', 2.6)}</button><span class="num" id="gsV"></span><button id="gsP" aria-label="יותר">${li('plus', 2.6)}</button></span></div>
+          <div class="row"><span class="grow ttl">עבודה<small>למגש של ${r.yield}</small></span><span class="mini"><button id="lbM" aria-label="פחות">${li('minus', 2.6)}</button><span class="num" id="lbV"></span><button id="lbP" aria-label="יותר">${li('plus', 2.6)}</button></span></div>
+        </div></div>
+
+      <div class="h2"><b>מחיר ורווח</b></div>
+      <div class="card" style="padding:16px">
+        <button class="row" id="sellBtn" style="min-height:0;padding-bottom:14px"><span class="grow"><span class="lbl">מחיר מכירה ל${r.one}</span><br><span id="sellV"></span></span><span class="pill">${li('pen', 2.2)}שינוי</span></button>
+        <div class="bar"><i class="c1" id="bC"></i><i class="c2" id="bP"></i></div>
+        <div class="legend"><span>עלות <b id="lC"></b></span><span>רווח <b id="lP"></b> · <b id="lM"></b></span></div>
+        <button class="pill accent press" id="rec" style="margin-top:14px"></button>
       </div>
-      <div class="profit">
-        <div class="row"><div><div class="sub" style="font-size:13px;font-weight:700">מחיר מכירה ליחידה</div><div class="sell num" id="sellV"></div></div>
-          <span class="mini" style="background:var(--bg-2)"><button id="slM" aria-label="פחות">${ic('minus')}</button><span class="num" style="min-width:8px"></span><button id="slP" aria-label="יותר">${ic('plus')}</button></span></div>
-        <div class="bar"><i class="c1" id="barC"></i><i class="c2" id="barP"></i></div>
-        <div class="legend"><span>עלות <b class="num" id="lgC"></b></span><span>רווח <b class="num" id="lgP"></b> · <b class="num" id="lgM"></b></span></div>
-        <button class="hint" id="rec"></button>
-      </div></div>
-
-    ${r.notes ? `<div class="section"><div class="label">הערות</div><div class="notes">${r.notes}</div></div>` : ''}
-    <div class="section"><button class="btn ghost press" id="toList" style="width:100%">${''}הוספה לרשימת קניות</button></div>
-  `);
-  const $ = id => sh.el.querySelector('#' + id);
-  const mult = segmented($('mult'), [[.5, '×½'], [1, '×1'], [2, '×2'], [3, '×3']], 1, v => { units = Math.round(r.yield * +v); update(); });
+      ${r.notes ? `<div class="h2"><b>הערות</b></div><div class="note">${r.notes}</div>` : ''}
+      <div style="margin-top:22px"><button class="sticker cta" id="toList">הוספה לרשימת הקניות</button></div>
+    </div>`, drawRecipeList);
+  const $ = id => pg.el.querySelector('#' + id);
+  const mult = segmented($('mult'), [['.5', '×½'], ['1', '×1'], ['2', '×2'], ['3', '×3']], '1', v => { units = Math.round(r.yield * +v); update(); });
+  const fade = () => $('hero').firstElementChild.animate([{ opacity: 0, transform: 'scale(1.05)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
+  function drawGallery() {
+    const g = gallery(r);
+    $('gal').innerHTML = (g.length ? g.map((s, i) => `<button class="press ${i === (r.coverIdx || 0) ? 'on' : ''}" data-i="${i}" aria-label="תמונה ${i + 1}"><img src="${s}" alt=""></button>`).join('')
+      : `<button class="on" style="background:var(${r.tint})" aria-label="איור">${cookie(r)}</button>`)
+      + `<label class="add press" aria-label="הוספת תמונה">${li('plus', 2.4)}<input type="file" accept="image/*" hidden class="gfile"></label>`;
+    $('gal').querySelectorAll('[data-i]').forEach(b => b.onclick = () => { buzz(); r.coverIdx = +b.dataset.i; $('hero').innerHTML = cover(r); fade(); drawGallery(); });
+    $('gal').querySelector('.gfile').onchange = addPhoto;
+  }
+  function addPhoto(e) { const f = e.target.files[0]; if (!f) return;
+    // shrink on the device before storing: the app uploads a small webp, never the original photo
+    const im = new Image(); im.onload = () => { const s = Math.min(1, 900 / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = im.width * s; c.height = im.height * s;
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(im.src);
+      (S.photos[r.id] = S.photos[r.id] || []).push(c.toDataURL('image/webp', .82)); r.coverIdx = S.photos[r.id].length - 1;
+      $('hero').innerHTML = cover(r); fade(); drawGallery(); toast(li('check', 3), 'התמונה נוספה'); };
+    im.src = URL.createObjectURL(f); }
+  $('file').onchange = addPhoto;
   function update() {
     const c = costing(r, units);
-    tween($('yBig'), units, v => Math.round(v));
-    const m = units / r.yield; mult.set([.5, 1, 2, 3].includes(+m.toFixed(2)) ? m : -1, true);
-    $('ings').innerHTML = c.rows.map(x => `<button class="ing" data-id="${x.p.id}"><span class="pic sq" style="background:var(${x.p.color})">${ic(x.p.icon)}</span>
-      <span><b>${x.p.name}</b><div class="q num">${qty(x.q, x.p.unit)}</div></span><span class="c num" style="text-align:end">${ils(x.cost)}<small>${S.manual[x.p.id] != null ? 'ידני' : offers(x.p)[0].chain.name}</small></span></button>`).join('');
-    $('ings').querySelectorAll('.ing').forEach(b => b.onclick = () => openProduct(prod(b.dataset.id), () => update()));
-    $('ingSum').innerHTML = ils(c.ingredients);
-    tween($('cIng'), c.ingredients, v => ils(v));
-    $('pkV').innerHTML = ils(r.pack); $('gsV').textContent = r.gas + '%'; $('lbV').innerHTML = ils(r.labor, 0);
-    tween($('cUnit'), c.perUnit, v => ils(v)); tween($('cTot'), c.total, v => ils(v));
-    tween($('sellV'), sell, v => ils(v));
-    const profit = sell - c.perUnit, margin = profit / sell;
-    $('barC').style.cssText = `width:${Math.min(100, c.perUnit / sell * 100)}%;transition:width var(--dur-glide) var(--ease-glide)`;
-    $('barP').style.cssText = `width:${Math.max(0, profit / sell * 100)}%;transition:width var(--dur-glide) var(--ease-glide)`;
-    $('lgC').innerHTML = ils(c.perUnit); $('lgP').innerHTML = ils(profit); $('lgM').textContent = Math.round(margin * 100) + '%';
-    $('lgP').style.color = profit < 0 ? 'var(--danger)' : '';
-    const rec = Math.ceil(c.perUnit / (1 - .6) * 2) / 2;
-    $('rec').innerHTML = `למרווח של 60% — מחיר מומלץ <u>${ils(rec)}</u>`; $('rec').onclick = () => { sell = rec; buzz(); update(); };
+    countTo($('yN'), units, v => Math.round(v));
+    const m = units / r.yield; mult.set(['.5', '1', '2', '3'].find(x => Math.abs(+x - m) < .001) ?? '');
+    $('mUnit').textContent = `${units} ${r.word}`;
+    $('ings').innerHTML = c.rows.map(x => `<button class="row" data-id="${x.p.id}"><span class="thumb">${img(x.p)}</span>
+      <span class="grow ttl">${x.p.name}<small>${qty(x.q, x.p.unit)}</small></span><span class="end">${money(x.cost, 15)}<small>${S.manual[x.p.id] != null ? 'מחיר שלי' : offers(x.p)[0].chain.name}</small></span></button>`).join('');
+    $('ings').querySelectorAll('[data-id]').forEach(b => b.onclick = () => openProduct(prod(b.dataset.id), update));
+    $('ingSum').innerHTML = money(c.ingredients, 13);
+    countTo($('cIng'), c.ingredients, v => money(v, 15)); countTo($('cUnit'), c.perUnit, v => money(v, 40)); countTo($('cTot'), c.total, v => money(v, 22));
+    $('pkV').textContent = '₪' + fmt(r.pack); $('gsV').textContent = r.gas + '%'; $('lbV').textContent = '₪' + fmt(r.labor, 0);
+    countTo($('sellV'), sell, v => money(v, 30));
+    const profit = sell - c.perUnit;
+    $('bC').style.width = Math.min(100, c.perUnit / sell * 100) + '%'; $('bP').style.width = Math.max(0, profit / sell * 100) + '%';
+    $('lC').textContent = '₪' + fmt(c.perUnit); $('lP').textContent = '₪' + fmt(profit); $('lM').textContent = Math.round(profit / sell * 100) + '%';
+    $('lP').style.color = profit < 0 ? 'var(--danger)' : '';
+    const rec = Math.ceil(c.perUnit / .4 * 2) / 2; $('rec').textContent = `מחיר מומלץ ל־60% רווח: ₪${fmt(rec)}`; $('rec').onclick = () => { buzz(); sell = rec; update(); };
   }
-  const step = (id, fn) => $(id).onclick = () => { buzz(); fn(); update(); };
-  step('yMinus', () => units = Math.max(1, units - 1)); step('yPlus', () => units++);
+  const step = (id, f) => $(id).onclick = () => { buzz(); f(); update(); };
+  step('yM', () => units = Math.max(1, units - 1)); step('yP', () => units++);
   step('pkM', () => r.pack = Math.max(0, +(r.pack - .05).toFixed(2))); step('pkP', () => r.pack = +(r.pack + .05).toFixed(2));
   step('gsM', () => r.gas = Math.max(0, r.gas - 1)); step('gsP', () => r.gas++);
   step('lbM', () => r.labor = Math.max(0, r.labor - 5)); step('lbP', () => r.labor += 5);
-  step('slM', () => sell = Math.max(.5, +(sell - .5).toFixed(2))); step('slP', () => sell = +(sell + .5).toFixed(2));
-  // drag the giant number: 14px per unit, a tick on each
-  const big = $('yBig'); let dr = null;
-  big.addEventListener('pointerdown', e => { big.setPointerCapture(e.pointerId); dr = { y: e.clientY, u: units }; });
-  big.addEventListener('pointermove', e => { if (!dr) return; const n = Math.max(1, dr.u + Math.round((dr.y - e.clientY) / 14)); if (n !== units) { units = n; buzz(); update(); } });
-  big.addEventListener('pointerup', () => dr = null);
-  // photos: upload adds to the gallery; tap the image to cycle
-  const gal = () => (S.photos[r.id + ':all'] || []);
-  function showPhotos() { const g = gal(); $('rDots').innerHTML = g.length > 1 ? g.map((_, i) => `<i class="${i === photoIdx ? 'on' : ''}"></i>`).join('') : ''; }
-  $('rFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader();
-    rd.onload = () => { const g = gal(); g.push(rd.result); S.photos[r.id + ':all'] = g; S.photos[r.id] = rd.result; photoIdx = g.length - 1;
-      $('rArt').innerHTML = art(r); $('rArt').animate([{ transform: 'scale(.6) rotate(-20deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 520, easing: getComputedStyle(document.documentElement).getPropertyValue('--ease-touch') });
-      showPhotos(); renderRecipes(); toast('התמונה נוספה'); }; rd.readAsDataURL(f); };
-  $('rArt').onclick = () => { const g = gal(); if (g.length < 2) return; photoIdx = (photoIdx + 1) % g.length; S.photos[r.id] = g[photoIdx]; $('rArt').innerHTML = art(r); showPhotos(); };
-  $('toList').onclick = () => { buzz(); toast(`${units} ${r.word} נוספו לרשימה`); };
-  update();
+  $('sellBtn').onclick = () => keypadSheet(`מחיר ל${r.one}`, 'כמה גובים על יחידה אחת', sell, v => { sell = v; update(); });
+  $('toList').onclick = () => { buzz(); const e = S.list.find(x => x[0] === r.id); e ? e[1] += units : S.list.push([r.id, units]); save(); toast(NAV.list(true), `${units} ${r.word} נוספו לרשימה`); };
+  drawGallery(); update();
 }
 
-/* ---------------------------------------------------------------- product sheet */
+/* ================================================================ product page */
 function openProduct(p, after) {
-  const sh = sheet(`
-    <div class="phead"><span class="pic sq" style="background:var(${p.color})">${ic(p.icon)}</span>
-      <div><h2 style="font-size:calc(30px * var(--ds))">${p.name}</h2><div class="sub">${sizeLabel(p)}</div><div class="barcode">${p.code}</div></div>
-      <button class="star press" id="fav" aria-label="מועדף"></button></div>
-
-    <div class="section"><div class="label"><span>מחירים ב${S.city} · מהזול ליקר</span><button class="city-btn press" id="pCity" style="padding:6px 10px">${ic('pin')}<span>החלפה</span></button></div>
-      <div class="box" id="offers"></div>
-      <div class="proto-note" style="margin-top:8px;text-align:start;padding-inline:4px">עודכן היום 06:10 · מקבצי שקיפות המחירים</div></div>
-
-    <div class="section"><div class="label">המחיר שלי</div>
-      <div class="box" style="padding:14px 16px">
-        <div class="manual"><label class="field">₪<input id="man" inputmode="decimal" placeholder="${offers(p)[0].price.toFixed(2)}"></label>
-          <button class="btn press" id="manSave">שמירה</button></div>
-        <div class="sub" id="manHint" style="font-size:13.5px;margin-top:10px"></div>
-      </div></div>
-
-    <div class="section"><div class="label">התראת ירידת מחיר</div>
-      <div class="box">
-        <div class="line"><span class="k">להתריע כשהמחיר יורד<small>בכל רשת ב${S.city}</small></span><button class="sw" id="alSw" aria-label="התראה"></button></div>
-        <div class="line" id="alRow"><span class="k">מתחת ל־</span><span class="v"><span class="mini" style="background:var(--bg-2)"><button id="alM" aria-label="פחות">${ic('minus')}</button><span class="num" id="alV"></span><button id="alP" aria-label="יותר">${ic('plus')}</button></span></span></div>
-      </div></div>
-
-    <div class="section"><div class="label">משמש ב־</div><div class="box" id="usedIn"></div></div>
-  `, { onClose: () => { renderProducts(false); renderRecipes(); after && after(); } });
-  const $ = id => sh.el.querySelector('#' + id);
-  function draw(anim) {
-    const os = offers(p), max = os[os.length - 1].price;
-    const before = new Map([...$('offers').children].map(n => [n.dataset.c, n.getBoundingClientRect().top]));
-    $('offers').innerHTML = os.map((o, i) => `<div class="offer ${i === 0 ? 'best' : ''}" data-c="${o.chain.id}">
-      <span class="ch">${o.chain.name} ${i === 0 ? '<span class="tag">הכי זול</span>' : ''}</span>
-      <span class="p num">${ils(o.price)}</span><span class="br">${o.branch}</span>
-      <span class="meter"><i style="width:${(o.price / max * 100).toFixed(1)}%"></i></span></div>`).join('');
-    if (anim && !reduce) [...$('offers').children].forEach(n => { const b = before.get(n.dataset.c); const now = n.getBoundingClientRect().top;
-      if (b != null) { const sp = new Spring(b - now, v => n.style.transform = `translateY(${v}px)`); sp.set(b - now); sp.to(0); }
-      else n.animate([{ opacity: 0 }, { opacity: 1 }], 300); });
+  const pg = page(`<div class="bar"><button class="rb press" data-back aria-label="חזרה">${li('back', 2.4)}</button><button class="rb press" id="fav" aria-label="מועדף"></button></div>
+    <div class="hero white">${p.code ? `<img src="img/${p.code}.webp" alt="" decoding="async">` : `<span style="width:150px;height:150px;border-radius:40px;display:grid;place-items:center;background:var(${p.tint})">${CAT_ICON[p.cat].replace('<svg', '<svg width="80" height="80"')}</span>`}</div>
+    <div class="sheetbody">
+      <h1>${p.name}</h1>
+      <div class="meta"><span class="pill">${size(p)}</span>${p.code ? `<span class="pill num" style="direction:ltr">${p.code}</span>` : ''}</div>
+      <div class="h2"><b id="ofT">מחירים ב${S.city}</b><button class="pill citypill press" id="pc" style="height:34px">${PIN}החלפה</button></div>
+      <div class="card rows" id="offers"></div>
+      <div class="h2"><b>המחיר שלי</b></div>
+      <div class="card rows"><button class="row" id="man"><span class="ico" style="background:var(--t-butter)">${TAG}</span><span class="grow ttl" id="manT"></span><span class="end" id="manV"></span><span class="chev">${li('chev')}</span></button>
+        <button class="row" id="manClr" hidden><span class="grow ttl" style="color:var(--danger)">חזרה למחירי הרשתות</span></button></div>
+      <div class="h2"><b>התראת ירידת מחיר</b></div>
+      <div class="card rows"><div class="row"><span class="ico" style="background:var(--t-sky)">${BELL}</span><span class="grow ttl">להתריע כשהמחיר יורד<small>בכל רשת ב${S.city}</small></span><button class="sw" id="al" role="switch"></button></div>
+        <div class="row" id="alRow"><span class="grow ttl">מתחת ל־</span><span class="mini"><button id="alM" aria-label="פחות">${li('minus', 2.6)}</button><span class="num" id="alV"></span><button id="alP" aria-label="יותר">${li('plus', 2.6)}</button></span></div></div>
+      <div class="h2"><b>במתכונים</b></div>
+      <div class="card rows" id="used"></div>
+    </div>`, () => { drawProductList(); after && after(); });
+  const $ = id => pg.el.querySelector('#' + id);
+  function draw(flip) {
+    const os = offers(p), max = os[os.length - 1].price, before = new Map([...$('offers').children].map(n => [n.dataset.c, n.getBoundingClientRect().top]));
+    $('offers').innerHTML = os.map((o, i) => `<div class="offer ${i === 0 ? 'best' : ''}" data-c="${o.chain.id}"><span class="mono" style="background:var(${o.chain.c})">${o.chain.m}</span>
+      <span class="n">${o.chain.name}${i === 0 ? '<span class="pill good" style="height:22px;padding:0 8px;font-size:11.5px">הכי זול</span>' : ''}</span>
+      <span class="p">${money(o.price, 20)}</span><span class="b">${o.branch}</span><span class="meter"><i style="width:${(o.price / max * 100).toFixed(1)}%"></i></span></div>`).join('');
+    if (flip) [...$('offers').children].forEach(n => { const b = before.get(n.dataset.c), now = n.getBoundingClientRect().top;
+      if (b == null) n.animate([{ opacity: 0 }, { opacity: 1 }], 300); else if (b !== now) n.animate([{ transform: `translateY(${b - now}px)` }, { transform: 'none' }], { duration: 560, easing: 'cubic-bezier(.22,1,.36,1)' }); });
     const m = S.manual[p.id];
-    $('man').value = m != null ? m.toFixed(2) : '';
-    $('manHint').innerHTML = m != null ? `המחיר הידני גובר על המחיר מהרשתות. <button style="color:var(--accent);font-weight:800" id="manClr">חזרה למחיר הזול</button>` : `ריק — המתכונים מחושבים לפי המחיר הזול ב${S.city} (${ils(os[0].price)}).`;
-    const clr = $('manClr'); if (clr) clr.onclick = () => { delete S.manual[p.id]; saveS(); buzz(); draw(); toast('חזרה למחיר מהרשתות'); };
-    $('fav').innerHTML = ic('star', S.favs.has(p.id)); $('fav').classList.toggle('on', S.favs.has(p.id));
-    const al = S.alerts[p.id]; $('alSw').classList.toggle('on', al != null); $('alRow').style.opacity = al != null ? 1 : .4;
-    $('alV').innerHTML = ils(al ?? Math.floor(os[0].price) - .1);
+    $('manT').innerHTML = m != null ? `מחיר ידני<small>גובר על מחירי הרשתות</small>` : `הזנת מחיר ידני<small>עכשיו לפי הזול ב${S.city}</small>`;
+    $('manV').innerHTML = money(m ?? os[0].price, 17); $('manClr').hidden = m == null;
+    $('fav').innerHTML = S.favs.has(p.id) ? CAT_ICON.fav : li('heart', 2.2);
+    const a = S.alerts[p.id]; $('al').classList.toggle('on', a != null); $('al').setAttribute('aria-checked', a != null); $('alRow').style.opacity = a != null ? 1 : .4; $('alV').textContent = '₪' + fmt(a ?? Math.floor(os[0].price) - .1);
     const used = RECIPES.filter(r => r.ing.some(([id]) => id === p.id));
-    $('usedIn').innerHTML = used.length ? used.map(r => `<div class="line"><span class="k">${r.name}</span><span class="v sub">${qty(r.ing.find(([id]) => id === p.id)[1], p.unit)}</span></div>`).join('') : `<div class="line"><span class="sub">עדיין לא בשום מתכון</span></div>`;
+    $('used').innerHTML = used.length ? used.map(r => `<button class="row" data-r="${r.id}"><span class="thumb" style="background:var(${r.tint})">${cover(r)}</span><span class="grow ttl">${r.name}<small>${qty(r.ing.find(([id]) => id === p.id)[1], p.unit)} למגש</small></span><span class="chev">${li('chev')}</span></button>`).join('')
+      : `<div class="row"><span class="grow ttl" style="color:var(--ink-dim);font-weight:500">עדיין לא בשום מתכון</span></div>`;
+    $('used').querySelectorAll('[data-r]').forEach(b => b.onclick = () => openRecipe(RECIPES.find(r => r.id === b.dataset.r)));
   }
-  $('fav').onclick = () => { buzz(); S.favs.has(p.id) ? S.favs.delete(p.id) : S.favs.add(p.id); saveS(); draw(); toast(S.favs.has(p.id) ? 'נוסף למועדפים' : 'הוסר מהמועדפים'); };
-  $('manSave').onclick = () => { const v = parseFloat($('man').value.replace(',', '.')); if (!(v > 0)) { $('man').focus(); toast('הקלידו מחיר, למשל 12.90'); return; } S.manual[p.id] = v; saveS(); buzz(); draw(); toast('המחיר הידני נשמר'); };
-  $('alSw').onclick = () => { buzz(); if (S.alerts[p.id] != null) delete S.alerts[p.id]; else S.alerts[p.id] = Math.floor(offers(p)[0].price) - .1; saveS(); draw(); };
-  const al = d => () => { if (S.alerts[p.id] == null) return; buzz(); S.alerts[p.id] = Math.max(.9, +(S.alerts[p.id] + d).toFixed(2)); saveS(); draw(); };
+  $('fav').onclick = () => { buzz(); const on = !S.favs.has(p.id); on ? S.favs.add(p.id) : S.favs.delete(p.id); save(); draw(); $('fav').firstChild.classList.add('pop'); toast(on ? CAT_ICON.fav : li('heart'), on ? 'נשמר במועדפים' : 'הוסר מהמועדפים'); };
+  $('man').onclick = () => keypadSheet('המחיר שלי', `${p.name} · ${size(p)}`, S.manual[p.id] ?? offers(p)[0].price, v => { S.manual[p.id] = v; save(); draw(); toast(li('check', 3), 'המחיר נשמר'); });
+  $('manClr').onclick = () => { buzz(); delete S.manual[p.id]; save(); draw(); toast(li('check', 3), 'חזרה למחירי הרשתות'); };
+  $('al').onclick = () => { buzz(); S.alerts[p.id] != null ? delete S.alerts[p.id] : S.alerts[p.id] = Math.floor(offers(p)[0].price) - .1; save(); draw(); if (S.alerts[p.id] != null) toast(BELL, 'נודיע כשהמחיר ירד'); };
+  const al = d => () => { if (S.alerts[p.id] == null) return; buzz(); S.alerts[p.id] = Math.max(.9, +(S.alerts[p.id] + d).toFixed(2)); save(); draw(); };
   $('alM').onclick = al(-.5); $('alP').onclick = al(.5);
-  $('pCity').onclick = () => openCity(() => { draw(true); sh.el.querySelector('.section .label span').textContent = `מחירים ב${S.city} · מהזול ליקר`; });
+  $('pc').onclick = () => openCity(() => { draw(true); $('ofT').textContent = `מחירים ב${S.city}`; });
   draw();
 }
 
-/* ---------------------------------------------------------------- city picker */
+/* ================================================================ sheets: city, add */
 function openCity(after) {
-  const sh = sheet(`<h2>עיר</h2><div class="sub">המחירים מסודרים לפי הסניפים בעיר שבחרתם.</div>
-    <div class="section"><div class="box cities">${Object.keys(CITIES).map(c => `<button class="city press" data-c="${c}"><span>${c}<br><small>${offers(PRODUCTS[0], c).length} רשתות</small></span>${c === S.city ? ic('check') : ''}</button>`).join('')}</div></div>`);
-  sh.el.querySelectorAll('.city').forEach(b => b.onclick = () => { S.city = b.dataset.c; saveS(); buzz(); renderProducts(); renderRecipes(); sh.close(); after && after(); toast(`מחירים ב${S.city}`); });
+  const sh = sheet(`<h3>בחירת עיר</h3><div class="lead">המחירים מסודרים מהזול ליקר לפי הסניפים בעיר.</div>
+    <div class="rows" style="padding:0">${Object.keys(CITIES).map(c => `<button class="row" data-c="${c}"><span class="ico" style="background:var(--t-rose)">${PIN}</span><span class="grow ttl">${c}<small>${offers(PRODUCTS[0], c).length} רשתות</small></span>${c === S.city ? `<span class="check on">${li('check', 3)}</span>` : ''}</button>`).join('')}</div>`);
+  sh.el.querySelectorAll('[data-c]').forEach(b => b.onclick = () => { buzz(); S.city = b.dataset.c; save(); sh.close(); render[S.tab](); after && after(); toast(PIN, `מחירים ב${S.city}`); });
+}
+function openAdd() {
+  buzz(); plus.classList.add('open');
+  const sh = sheet(`<h3>מה מוסיפים?</h3><div class="lead">מתכון חדש, מוצר מהסופר או סריקה בחנות.</div>
+    <div class="addgrid"><button class="press" style="background:var(--t-butter)" data-a="r">${NAV.recipes(true)}מתכון</button>
+      <button class="press" style="background:var(--t-peach)" data-a="p">${NAV.products(true)}מוצר</button>
+      <button class="press" style="background:var(--t-sky)" data-a="s">${SCAN}סריקה</button></div>`, () => plus.classList.remove('open'));
+  sh.el.querySelectorAll('[data-a]').forEach(b => b.onclick = () => { buzz(); sh.close(); const a = b.dataset.a;
+    if (a === 's') { toast(SCAN, 'נסרק: שוקולד צ׳יפס מריר'); setTimeout(() => openProduct(prod('chips')), 450); }
+    else toast(a === 'r' ? NAV.recipes(true) : NAV.products(true), a === 'r' ? 'עורך המתכונים — בשלב 5' : 'הוספת מוצר — בשלב 3'); });
 }
 
-/* ---------------------------------------------------------------- settings + notifications */
-function openSettings() {
-  const N = S.notif;
-  const sh = sheet(`<h2>הגדרות</h2>
-    <div class="section"><div class="label">מראה</div><div class="box" style="padding:12px 14px">
-      <div class="seg" id="theme" style="margin:0"></div>
-      <div class="sw-row" id="acc"></div></div></div>
+let tt; function toast(icon, msg) { const t = document.getElementById('toast'); t.innerHTML = icon + `<span>${msg}</span>`; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 2000); }
 
-    <div class="section"><div class="label">התראות · מחירים</div><div class="box">
-      <div class="line"><span class="k">ירידת מחיר<small>למוצרים שהגדרתם להם סף</small></span><button class="sw" data-n="drop"></button></div>
-      <div class="line"><span class="k">סיכום מחירים שבועי<small>ביום חמישי, 18:00</small></span><button class="sw" data-n="weekly"></button></div></div></div>
-
-    <div class="section"><div class="label">התראות · מיקום</div><div class="box">
-      <div class="line"><span class="k">כשנכנסים לסופר<small>רשימת הקניות והמבצעים בסניף</small></span><button class="sw" data-n="enter"></button></div>
-      <div id="chainsWrap"><div class="sub" style="font-size:13px;padding-top:4px">באילו רשתות</div><div class="chips" id="chains"></div></div>
-      <div class="line"><span class="k">לפי עיר<small>להחליף את עיר המחירים כשמגיעים לעיר אחרת</small></span><button class="sw" data-n="cityAuto"></button></div></div></div>
-
-    <div class="section"><div class="label">התראות · זמנים</div><div class="box">
-      <div class="line"><span class="k">תזכורת לרשימת קניות<small>יום שישי, 09:00</small></span><button class="sw" data-n="list"></button></div>
-      <div class="line"><span class="k">שעות שקטות<small>22:00–07:00, בלי צליל ורטט</small></span><button class="sw" data-n="quiet"></button></div></div></div>
-
-    <div class="proto-note">אב-טיפוס · כל המחירים והסניפים כאן הם נתונים לדוגמה</div>`);
-  const $ = s => sh.el.querySelector(s);
-  segmented($('#theme'), [['system', 'מערכת'], ['light', 'בהיר'], ['dark', 'כהה']], S.theme, v => { S.theme = v; saveS(); applyLook(); });
-  const accs = [['fire', '#E0542C'], ['forest', '#1E7552'], ['ink', '#3442CF'], ['plum', '#8E3AB3']];
-  const drawAcc = () => $('#acc').innerHTML = accs.map(([k, c]) => `<button class="swatch sq press ${S.accent === k ? 'on' : ''}" data-a="${k}" style="background:${c}" aria-label="${k}"></button>`).join('');
-  drawAcc(); $('#acc').onclick = e => { const b = e.target.closest('[data-a]'); if (!b) return; buzz(); S.accent = b.dataset.a; saveS(); applyLook(); drawAcc(); };
-  const drawN = () => { sh.el.querySelectorAll('.sw[data-n]').forEach(s => s.classList.toggle('on', !!N[s.dataset.n]));
-    $('#chainsWrap').style.display = N.enter ? '' : 'none';
-    $('#chains').innerHTML = CHAINS.map(c => `<button class="chip press ${N.chains.includes(c.id) ? 'on' : ''}" data-c="${c.id}">${c.name}</button>`).join(''); };
-  sh.el.querySelectorAll('.sw[data-n]').forEach(s => s.onclick = () => { buzz(); N[s.dataset.n] = !N[s.dataset.n]; saveS(); drawN();
-    if (s.dataset.n === 'enter' && N.enter) toast('באפליקציה: בקשת הרשאת מיקום "תמיד"'); });
-  $('#chains').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; buzz(); const i = N.chains.indexOf(b.dataset.c); i < 0 ? N.chains.push(b.dataset.c) : N.chains.splice(i, 1); saveS(); drawN(); };
-  drawN();
-}
-avatar.onclick = () => { buzz(); openSettings(); };
-
-/* ---------------------------------------------------------------- add / scan */
-fab.innerHTML = ic('plus'); scan.innerHTML = ic('scan');
-fab.onclick = () => { buzz(); toast(tabT < .5 ? 'מתכון חדש — בשלב 5' : 'מוצר חדש — בשלב 3'); };
-scan.onclick = () => { buzz(); const p = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)]; toast(`נסרק: ${p.name}`); setTimeout(() => openProduct(p), 500); };
-
-let toastT; function toast(msg) { const t = document.getElementById('toast'); t.innerHTML = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1900); }
-
-renderRecipes(); renderProducts();
-requestAnimationFrame(() => tabSpring.set(0));
-addEventListener('resize', () => tabSpring.set(tabT));
+renderTabbar(); render.recipes();
 </script>
