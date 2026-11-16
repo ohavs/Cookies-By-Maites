@@ -4,6 +4,7 @@ import android.app.Application
 import com.maites.cookies.data.AppDb
 import com.maites.cookies.data.Prefs
 import com.maites.cookies.data.PriceSync
+import kotlinx.coroutines.launch
 
 class CookiesApp : Application() {
     val prefs by lazy { Prefs(this) }
@@ -18,5 +19,6 @@ class CookiesApp : Application() {
     override fun onCreate() {
         super.onCreate()
         cloud.start()
+        applicationScope.launch { com.maites.cookies.data.ProductPhotos.localizeAll(this@CookiesApp, db.products()) }
     }
 }

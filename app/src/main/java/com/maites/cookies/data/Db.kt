@@ -86,6 +86,9 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE gid = :gid") suspend fun byGid(gid: String): ProductEntity?
     @Query("SELECT * FROM products WHERE id = :id") suspend fun once(id: Long): ProductEntity?
     @Query("SELECT * FROM products WHERE dirty = 1") suspend fun dirty(): List<ProductEntity>
+    @Query("SELECT * FROM products WHERE imageUrl LIKE 'http%'") suspend fun remoteImages(): List<ProductEntity>
+    @Query("UPDATE products SET imageUrl = :path, dirty = 1 WHERE id = :id AND imageUrl = :old") suspend fun setImage(id: Long, old: String, path: String): Int
+    @Query("SELECT imageUrl FROM products WHERE imageUrl LIKE '/%'") suspend fun localImages(): List<String>
     @Query("UPDATE products SET dirty = 0 WHERE id = :id AND updatedAt = :at") suspend fun markClean(id: Long, at: Long)
     @Query("DELETE FROM products WHERE id = :id") suspend fun deleteRow(id: Long)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun tomb(t: Tombstone)

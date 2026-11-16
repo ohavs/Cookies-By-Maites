@@ -17,6 +17,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
@@ -187,12 +188,16 @@ object RecipePhotos {
                 val k = maxOf(b.width, b.height) / 1600f
                 if (k > 1f) Bitmap.createScaledBitmap(b, (b.width / k).toInt(), (b.height / k).toInt(), true) else b
             }
-            val f = File(dir(ctx), UUID.randomUUID().toString() + ".webp")
-            @Suppress("DEPRECATION")
-            val fmt = if (Build.VERSION.SDK_INT >= 30) Bitmap.CompressFormat.WEBP_LOSSY else Bitmap.CompressFormat.WEBP
-            f.outputStream().use { bmp.compress(fmt, 82, it) }
-            f.absolutePath
+            save(dir(ctx), bmp)
         }.getOrNull()
+    }
+
+    internal fun save(dir: File, bmp: Bitmap): String {
+        val f = File(dir, UUID.randomUUID().toString() + ".webp")
+        @Suppress("DEPRECATION")
+        val fmt = if (Build.VERSION.SDK_INT >= 30) Bitmap.CompressFormat.WEBP_LOSSY else Bitmap.CompressFormat.WEBP
+        f.outputStream().use { bmp.compress(fmt, 82, it) }
+        return f.absolutePath
     }
 
     fun file(ctx: Context, name: String) = File(dir(ctx), name)
@@ -200,6 +205,40 @@ object RecipePhotos {
     /** Deletes photo files no recipe references any more. */
     fun prune(ctx: Context, keep: Set<String>) {
         dir(ctx).listFiles()?.forEach { if (it.absolutePath !in keep) it.delete() }
+    }
+}
+
+/**
+ * Product pack images live on the phone as webp (`filesDir/products`), like recipe photos,
+ * so they sync to Storage instead of pointing at Open Food Facts.
+ */
+object ProductPhotos {
+    private fun dir(ctx: Context) = File(ctx.filesDir, "products").apply { mkdirs() }
+
+    fun file(ctx: Context, name: String) = File(dir(ctx), name)
+    fun isLocal(path: String?) = path != null && path.startsWith("/")
+
+    /** Downloads [url] and stores it as webp ≤800px. Null on failure. */
+    suspend fun download(ctx: Context, url: String): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val c = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply { connectTimeout = 10000; readTimeout = 20000 }
+            val bytes = try { c.inputStream.use { it.readBytes() } } finally { c.disconnect() }
+            val b = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)!!
+            val k = maxOf(b.width, b.height) / 800f
+            RecipePhotos.save(dir(ctx), if (k > 1f) Bitmap.createScaledBitmap(b, (b.width / k).toInt(), (b.height / k).toInt(), true) else b)
+        }.getOrNull()
+    }
+
+    private val lock = kotlinx.coroutines.sync.Mutex()
+
+    /** Moves every product still pointing at a web image onto the phone (marked for sync), then drops unused files. */
+    suspend fun localizeAll(ctx: Context, dao: ProductDao) = lock.withLock {
+        dao.remoteImages().forEach { p ->
+            val url = p.imageUrl ?: return@forEach
+            download(ctx, url)?.let { if (dao.setImage(p.id, url, it) == 0) File(it).delete() }
+        }
+        val keep = dao.localImages().toSet()
+        dir(ctx).listFiles()?.forEach { if (it.absolutePath !in keep && !it.name.endsWith(".part")) it.delete() }
     }
 }
 

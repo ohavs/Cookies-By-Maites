@@ -132,7 +132,8 @@ sealed interface SyncState {
 /**
  * Room stays the source of truth; the cloud is a per-user mirror at `users/{uid}/{products|recipes}/{gid}`.
  * Pull: documents whose server time `syncAt` is past our watermark (local unsent edits win).
- * Push: dirty rows + tombstones, then recipe photos to Storage `users/{uid}/photos/{file}`.
+ * Push: dirty rows + tombstones, then recipe photos and product images to Storage `users/{uid}/photos/{file}`.
+ * Photos we uploaded that nothing references any more are deleted from Storage after a successful push.
  */
 class CloudSync(private val ctx: Context, private val db: AppDb, private val prefs: Prefs, private val auth: CloudAuth, private val scope: CoroutineScope) {
     private val lock = Mutex()
@@ -170,8 +171,10 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
                 val t = auth.token() ?: return@withContext
                 pullProducts(uid, t)
                 pullRecipes(uid, t)
+                ProductPhotos.localizeAll(ctx, db.products())
                 fetchMissingPhotos(uid, t)
                 push(uid, t)
+                collectPhotos(uid, t)
             }
             prefs.setLastCloudSync(System.currentTimeMillis())
             SyncState.Idle
@@ -226,10 +229,11 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
                 priceAgorot = f.optJSONObject("price")?.optString("integerValue")?.toLongOrNull(),
                 favorite = f.bool("favorite"), updatedAt = f.long("updatedAt"), brand = f.str("brand"),
                 category = runCatching { ProductCategory.valueOf(f.str("category")) }.getOrDefault(ProductCategory.Pantry),
-                imageUrl = f.str("imageUrl").ifBlank { null },
+                imageUrl = f.str("image").takeIf { it.isNotBlank() }?.let { ProductPhotos.file(ctx, it).absolutePath } ?: f.str("imageUrl").ifBlank { null },
             )
             if (local != null && local.copy(dirty = false) == remote) return@changed
             dao.put(remote)
+            if (local?.imageUrl != remote.imageUrl && ProductPhotos.isLocal(local?.imageUrl)) File(local!!.imageUrl!!).delete()
             if (merged) db.sync().tomb(Tombstone(local!!.gid, "products"))
         }
     }
@@ -268,7 +272,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
     }
 
     private suspend fun fetchMissingPhotos(uid: String, t: String) {
-        db.recipes().all().flatMap { it.photoList }.map(::File).filter { !it.exists() }.forEach { f ->
+        (db.recipes().all().flatMap { it.photoList } + db.products().localImages()).map(::File).filter { !it.exists() }.forEach { f ->
             val c = (URL(objectUrl(uid, f.name) + "?alt=media").openConnection() as HttpURLConnection).apply {
                 connectTimeout = 10000; readTimeout = 30000; setRequestProperty("Authorization", "Firebase $t")
             }
@@ -296,14 +300,16 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
             doc(uid, "products", p.gid, fields(
                 "name" to p.name, "barcode" to p.barcode, "packAmount" to p.packAmount, "unit" to p.unit.name,
                 "price" to p.priceAgorot, "favorite" to p.favorite, "updatedAt" to p.updatedAt, "brand" to p.brand,
-                "category" to p.category.name, "imageUrl" to p.imageUrl,
+                "category" to p.category.name,
+                "image" to p.imageUrl?.takeIf(ProductPhotos::isLocal)?.let { File(it).name },
+                "imageUrl" to p.imageUrl?.takeIf { !ProductPhotos.isLocal(it) },
             ))
         })
         products.forEach { db.products().markClean(it.id, it.updatedAt) }
 
         val recipes = db.recipes().dirty()
         val uploaded = prefs.uploaded()
-        recipes.flatMap { it.photoList }.map(::File).filter { it.exists() && it.name !in uploaded }.forEach { f ->
+        (recipes.flatMap { it.photoList } + products.mapNotNull { it.imageUrl?.takeIf(ProductPhotos::isLocal) }).map(::File).filter { it.exists() && it.name !in uploaded }.forEach { f ->
             val r = http("POST", "https://firebasestorage.googleapis.com/v0/b/$bucket/o?uploadType=media&name=" + enc(path(uid, f.name)), f.readBytes(), "image/webp", "Firebase $t")
             if (!r.ok) throw CloudError("העלאת תמונה נכשלה (${r.code})")
             prefs.addUploaded(f.name)
@@ -320,6 +326,15 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
             ).put("ingredients", JSONObject().put("arrayValue", JSONObject().put("values", JSONArray(items.map { JSONObject().put("mapValue", JSONObject().put("fields", it)) })))))
         })
         recipes.forEach { db.recipes().markClean(it.id, it.updatedAt) }
+    }
+
+    /** Deletes from Storage the photos we uploaded that no recipe or product uses any more. */
+    private suspend fun collectPhotos(uid: String, t: String) {
+        val used = (db.recipes().all().flatMap { it.photoList } + db.products().localImages()).map { File(it).name }.toSet()
+        prefs.uploaded().filter { it !in used }.forEach { name ->
+            val r = http("DELETE", objectUrl(uid, name), auth = "Firebase $t")
+            if (r.ok || r.code == 404) prefs.removeUploaded(name)
+        }
     }
 
     private fun doc(uid: String, kind: String, gid: String, fields: JSONObject) = JSONObject()

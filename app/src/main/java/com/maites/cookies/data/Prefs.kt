@@ -83,6 +83,7 @@ class Prefs(private val ctx: Context) {
     /** Recipe photo file names already in Storage. */
     suspend fun uploaded(): Set<String> = ctx.store.data.first()[kUploaded] ?: emptySet()
     suspend fun addUploaded(name: String) = ctx.store.edit { it[kUploaded] = (it[kUploaded] ?: emptySet()) + name }
+    suspend fun removeUploaded(name: String) = ctx.store.edit { it[kUploaded] = (it[kUploaded] ?: emptySet()) - name }
 
     /** Forget all cloud progress (new sign-in): everything is merged again from scratch. */
     suspend fun resetCloud() = ctx.store.edit { p ->
