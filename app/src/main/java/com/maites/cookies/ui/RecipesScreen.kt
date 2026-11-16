@@ -156,7 +156,7 @@ fun RecipesScreen(app: CookiesApp, onAdd: () -> Unit, onOpen: (Long) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(Space.m),
             verticalArrangement = Arrangement.spacedBy(Space.m),
         ) {
-            items(shown, key = { it.id }) { r -> Box(Modifier.animateItem(placementSpec = com.maites.cookies.design.Springs.soft(androidx.compose.ui.unit.IntOffset.VisibilityThreshold))) { RecipeTile(r) { onOpen(r.id) } } }
+            items(shown, key = { it.id }) { r -> Box(Modifier.animateItem(placementSpec = com.maites.cookies.design.Springs.soft(androidx.compose.ui.unit.IntOffset(1, 1)))) { RecipeTile(r) { onOpen(r.id) } } }
         }
     }
 }
