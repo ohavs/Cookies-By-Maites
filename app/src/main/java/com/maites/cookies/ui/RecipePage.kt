@@ -41,7 +41,8 @@ import com.maites.cookies.CookiesApp
 import com.maites.cookies.data.IngredientEntity
 import com.maites.cookies.data.ProductEntity
 import com.maites.cookies.data.RecipePhotos
-import com.maites.cookies.data.ingredientCost
+import com.maites.cookies.data.Costing
+import com.maites.cookies.data.RecipeEntity
 import com.maites.cookies.design.C
 import com.maites.cookies.design.CCard
 import com.maites.cookies.design.CSheet
@@ -57,7 +58,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Composable
-fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit, onProduct: (Long) -> Unit, toast: (String) -> Unit) {
+fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit, onProduct: (Long) -> Unit, onCosting: () -> Unit, toast: (String) -> Unit) {
     val c = C.colors
     val dao = app.db.recipes()
     val ctx = LocalContext.current
@@ -65,7 +66,8 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
     val items by remember(id) { dao.ingredients(id) }.collectAsStateWithLifecycle(emptyList())
     val products by app.db.products().all().collectAsStateWithLifecycle(emptyList())
     val byId = remember(products) { products.associateBy { it.id } }
-    val prices = rememberPackPrices(app)
+    var mult by remember(id) { mutableStateOf(1.0) }
+    val cost = rememberIngredientsCost(app, items, mult)
     val scope = rememberCoroutineScope()
     var confirmDelete by remember { mutableStateOf(false) }
     val r = recipe ?: return
@@ -91,38 +93,26 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
                     yieldText(r.yieldCount, r.yieldLabel)?.let { Pill(it) }
                 }
 
+                if (items.isNotEmpty()) {
+                    Spacer(Modifier.height(Space.xl))
+                    SectionLabel("כמויות")
+                    Scaler(r.yieldCount, r.yieldLabel, mult) { mult = it }
+                }
+
                 Spacer(Modifier.height(Space.xl))
                 SectionLabel("מרכיבים")
                 if (items.isEmpty()) {
                     CCard(Modifier.fillMaxWidth()) { Text("עוד אין מרכיבים — מוסיפים בעריכה ✏️", style = TextStyles.body, color = c.inkDim) }
                 } else {
-                    val costs = items.map { i -> ingredientCost(i, i.productId?.let(byId::get), i.productId?.let(prices::get)) }
                     CCard(Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
                         items.forEachIndexed { idx, i ->
                             if (idx > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.divider))
-                            IngredientLine(i, i.productId?.let(byId::get), costs[idx], onClick = i.productId?.takeIf(byId::containsKey)?.let { pid -> { onProduct(pid) } })
+                            IngredientLine(i.copy(amount = i.amount * mult), i.productId?.let(byId::get), cost.lines[idx], onClick = i.productId?.takeIf(byId::containsKey)?.let { pid -> { onProduct(pid) } })
                         }
                     }
-                    val known = costs.filterNotNull()
-                    if (known.isNotEmpty()) {
-                        Spacer(Modifier.height(Space.m))
-                        CCard(Modifier.fillMaxWidth()) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text("עלות המרכיבים", style = TextStyles.heading, color = c.ink)
-                                    Text(
-                                        if (known.size < costs.size) "בלי ${costs.size - known.size} מרכיבים שאין להם מחיר" else "לפי המחיר הזול בעיר או המחיר שלך",
-                                        style = TextStyles.label, color = c.inkDim,
-                                    )
-                                }
-                                Text(formatShekel(known.sum()), style = TextStyles.title, color = c.ink)
-                            }
-                            if (r.yieldCount > 0) Text(
-                                "${formatShekel(Math.round(known.sum().toDouble() / r.yieldCount))} ליחידה",
-                                style = TextStyles.label, color = c.accentInk,
-                            )
-                        }
-                    }
+                    Spacer(Modifier.height(Space.xl))
+                    SectionLabel("תמחיר")
+                    CostSummary(r, Costing.of(cost.sum, r.extraList, r.yieldCount, mult), cost.missing, onCosting)
                 }
 
                 if (r.notes.isNotBlank()) {
@@ -204,3 +194,58 @@ fun IngredientLine(i: IngredientEntity, p: ProductEntity?, cost: Long?, onClick:
     }
 }
 
+
+private val STEPS = listOf(0.5 to "חצי", 1.0 to "רגיל", 2.0 to "כפול", 3.0 to "פי 3")
+
+/** Multiplier chips, plus a units stepper when the recipe has a yield. */
+@Composable
+private fun Scaler(yieldCount: Int, yieldLabel: String, mult: Double, onMult: (Double) -> Unit) {
+    val c = C.colors
+    CCard(Modifier.fillMaxWidth()) {
+        if (yieldCount > 0) {
+            val units = Math.round(yieldCount * mult).toInt()
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("$units ${yieldLabel.ifBlank { "יחידות" }}", style = TextStyles.title, color = c.ink)
+                    Text("הכמויות והעלות מתעדכנות", style = TextStyles.label, color = c.inkDim)
+                }
+                RoundButton("−", { if (units > 1) onMult((units - 1).toDouble() / yieldCount) })
+                Spacer(Modifier.width(Space.s))
+                RoundButton("+", { if (units < 9999) onMult((units + 1).toDouble() / yieldCount) })
+            }
+            Spacer(Modifier.height(Space.m))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+            STEPS.forEach { (m, label) -> com.maites.cookies.design.CChip(label, kotlin.math.abs(mult - m) < 1e-9, { onMult(m) }) }
+        }
+    }
+}
+
+@Composable
+private fun CostSummary(r: RecipeEntity, cost: Costing, missing: Int, onOpen: () -> Unit) {
+    val c = C.colors
+    CCard(Modifier.fillMaxWidth(), onClick = onOpen) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(if (r.yieldCount > 0) "עלות ליחידה" else "עלות לתבנית", style = TextStyles.heading, color = c.ink)
+                Text(
+                    "מרכיבים ${formatShekel(cost.ingredients)}" + (if (cost.extras.isNotEmpty()) " · נוספות ${formatShekel(cost.extrasTotal)}" else "") +
+                        (if (r.yieldCount > 0) " · סה״כ ${formatShekel(cost.total)}" else ""),
+                    style = TextStyles.label, color = c.inkDim,
+                )
+            }
+            Text(formatShekel(cost.perUnit), style = TextStyles.title, color = c.ink)
+        }
+        if (missing > 0) Text("בלי $missing מרכיבים שאין להם מחיר", style = TextStyles.label, color = c.danger, modifier = Modifier.padding(top = Space.xs))
+        Spacer(Modifier.height(Space.m))
+        if (r.salePrice > 0) {
+            val p = cost.profit(r.salePrice)
+            Text(
+                "נמכר ב-${formatShekel(r.salePrice)} · ${if (p >= 0) "רווח" else "הפסד"} ${formatShekel(kotlin.math.abs(p))} (${formatPercent(cost.margin(r.salePrice))})",
+                style = TextStyles.body, color = if (p >= 0) c.good else c.danger,
+            )
+        } else {
+            Text("‹ עלויות נוספות ומחיר מכירה", style = TextStyles.label, color = c.accentInk)
+        }
+    }
+}

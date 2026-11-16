@@ -330,7 +330,7 @@ private fun PhotoThumb(path: String, cat: RecipeCategory, main: Boolean, onMain:
 }
 
 @Composable
-private fun ValueBox(text: String, placeholder: Boolean, onClick: () -> Unit) {
+fun ValueBox(text: String, placeholder: Boolean, onClick: () -> Unit) {
     val c = C.colors
     Row(
         Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(16.dp)).background(c.surface).pressable(onClick).padding(horizontal = Space.l),

@@ -37,8 +37,64 @@ data class RecipeEntity(
     val photos: String = "",
     val favorite: Boolean = false,
     val updatedAt: Long = System.currentTimeMillis(),
+    /** JSON list of [ExtraCost]. */
+    val extras: String = "",
+    /** Sale price per unit (or per batch when [yieldCount] = 0), agorot. 0 = not set. */
+    val salePrice: Long = 0,
+    /** Target margin in percent (of the sale price). 0 = not set. */
+    val targetMargin: Int = 0,
 ) {
     val photoList get() = photos.split('\n').filter { it.isNotBlank() }
+    val extraList get() = ExtraCost.decode(extras)
+}
+
+/** How an extra cost is counted: per batch (₪), per unit (₪) or percent of the ingredients. */
+enum class ExtraKind(val label: String) { Batch("₪ לתבנית"), PerUnit("₪ ליחידה"), Percent("% מהמרכיבים") }
+
+/** [value]: agorot, or percent × 100 for [ExtraKind.Percent]. */
+data class ExtraCost(val name: String, val kind: ExtraKind, val value: Long) {
+    companion object {
+        fun encode(list: List<ExtraCost>): String = org.json.JSONArray(list.map {
+            org.json.JSONObject().put("n", it.name).put("k", it.kind.name).put("v", it.value)
+        }).toString()
+
+        fun decode(s: String): List<ExtraCost> = runCatching {
+            val a = org.json.JSONArray(s)
+            (0 until a.length()).map { i ->
+                val o = a.getJSONObject(i)
+                ExtraCost(o.getString("n"), runCatching { ExtraKind.valueOf(o.getString("k")) }.getOrDefault(ExtraKind.Batch), o.getLong("v"))
+            }
+        }.getOrDefault(emptyList())
+    }
+}
+
+/**
+ * Full costing of one batch at multiplier [mult]. [ingredients] is already scaled.
+ * [units] = units the scaled batch makes (null when the recipe has no yield → per-unit = per-batch).
+ */
+data class Costing(val ingredients: Long, val extras: List<Pair<ExtraCost, Long>>, val units: Double?) {
+    val extrasTotal get() = extras.sumOf { it.second }
+    val total get() = ingredients + extrasTotal
+    val perUnit: Long get() = units?.takeIf { it > 0 }?.let { Math.round(total / it) } ?: total
+
+    fun profit(sale: Long) = sale - perUnit
+    /** Profit as percent of the sale price. */
+    fun margin(sale: Long) = if (sale > 0) profit(sale) * 100.0 / sale else 0.0
+    /** Price that leaves [percent] of it as profit. */
+    fun priceFor(percent: Int): Long? = if (percent in 1..99) Math.round(perUnit * 100.0 / (100 - percent)) else null
+
+    companion object {
+        fun of(ingredients: Long, extras: List<ExtraCost>, yieldCount: Int, mult: Double): Costing {
+            val units = if (yieldCount > 0) yieldCount * mult else null
+            return Costing(ingredients, extras.map { e ->
+                e to when (e.kind) {
+                    ExtraKind.Batch -> Math.round(e.value * mult)
+                    ExtraKind.PerUnit -> Math.round(e.value * (units ?: 1.0))
+                    ExtraKind.Percent -> Math.round(ingredients * e.value / 10000.0)
+                }
+            }, units)
+        }
+    }
 }
 
 /** One line of a recipe. Linked to a product ([productId]) or free text ([name]). [amount] in base units of [unit]. */
@@ -79,6 +135,8 @@ interface RecipeDao {
     @Insert suspend fun insertIngredients(i: List<IngredientEntity>)
     @Query("DELETE FROM ingredients WHERE recipeId = :id") suspend fun clearIngredients(id: Long)
     @Query("DELETE FROM recipes WHERE id = :id") suspend fun delete(id: Long)
+    @Query("UPDATE recipes SET extras = :extras, salePrice = :sale, targetMargin = :margin WHERE id = :id")
+    suspend fun setCosting(id: Long, extras: String, sale: Long, margin: Int)
 
     /** Saves the recipe and replaces its ingredient list. Returns the recipe id. */
     @Transaction

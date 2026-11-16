@@ -36,6 +36,8 @@ data class ChainStore(val chain: String, val storeId: String, val name: String, 
 @Entity(tableName = "chain_prices", primaryKeys = ["barcode", "chain", "storeId"])
 data class ChainPrice(val barcode: String, val chain: String, val storeId: String, val agorot: Long)
 
+data class ChainCount(val chain: String, val n: Int)
+
 data class StorePrice(val chain: String, val storeId: String, val name: String, val city: String, val address: String, val agorot: Long)
 
 @Dao
@@ -56,6 +58,10 @@ interface PriceDao {
            WHERE s.city = :city GROUP BY p.barcode""",
     )
     fun cheapestInCity(city: String): Flow<List<BarcodePrice>>
+
+    /** Stores per chain in [city]. */
+    @Query("SELECT chain, COUNT(*) AS n FROM chain_stores WHERE city = :city GROUP BY chain")
+    fun storesInCity(city: String): Flow<List<ChainCount>>
 
     @Query("SELECT COUNT(*) FROM chain_prices WHERE barcode = :barcode")
     fun countAnywhere(barcode: String): Flow<Int>

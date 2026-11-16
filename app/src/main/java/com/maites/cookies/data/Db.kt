@@ -91,7 +91,15 @@ private val M3_4 = object : Migration(3, 4) {
     }
 }
 
-@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class], version = 4, exportSchema = false)
+private val M4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE recipes ADD COLUMN extras TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE recipes ADD COLUMN salePrice INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE recipes ADD COLUMN targetMargin INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class], version = 5, exportSchema = false)
 @androidx.room.TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun products(): ProductDao
@@ -99,7 +107,7 @@ abstract class AppDb : RoomDatabase() {
     abstract fun recipes(): RecipeDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4).build()
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5).build()
     }
 }
 

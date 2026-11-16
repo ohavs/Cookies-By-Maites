@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -81,8 +82,10 @@ fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onP
                     SettingRow("עיר", city.ifBlank { "עוד לא נבחרה" }, onPickCity) {
                         Text("📍", style = TextStyles.heading)
                     }
-                    val local by app.prefs.localState.collectAsStateWithLifecycle(com.maites.cookies.data.LocalState(0, "", ""))
-                    SettingRow("ויקטורי · קרפור", localSummary(local))
+                }
+                if (city.isNotBlank()) {
+                    Spacer(Modifier.height(Space.m))
+                    ChainsCard(app, city)
                 }
             }
             Column {
@@ -163,14 +166,45 @@ private fun UpdateCard(toast: (String) -> Unit) {
     }
 }
 
-/** Victory/Carrefour are read by the phone itself — show how the last read went. */
-private fun localSummary(s: com.maites.cookies.data.LocalState): String {
-    if (s.at == 0L) return "נקראים ישירות מהטלפון · עוד לא עודכנו"
-    val parts = s.status.split(';').filter { it.isNotBlank() }.map { row ->
-        val f = row.split(':')
-        val name = com.maites.cookies.data.Chain.of(f[0])?.label ?: f[0]
-        if (f.getOrNull(1) == "ok") "$name ✓ ${f.getOrNull(3) ?: 0} מחירים" else "$name — לא זמין"
+/** Every chain: how many stores in the city, and whether its prices could be read. */
+@Composable
+private fun ChainsCard(app: CookiesApp, city: String) {
+    val c = C.colors
+    val counts by androidx.compose.runtime.remember(city) { app.db.prices().storesInCity(city) }.collectAsStateWithLifecycle(emptyList())
+    val local by app.prefs.localState.collectAsStateWithLifecycle(com.maites.cookies.data.LocalState(0, "", ""))
+    val failed = local.status.split(';').mapNotNull { row -> row.split(':').takeIf { it.getOrNull(1) == "err" }?.let { it[0] to it.getOrNull(2).orEmpty() } }.toMap()
+    val n = counts.associate { it.chain to it.n }
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    CCard(padding = androidx.compose.foundation.layout.PaddingValues(horizontal = Space.l, vertical = Space.s)) {
+        Text("רשתות ב$city", style = TextStyles.heading, color = c.ink, modifier = Modifier.padding(top = Space.s))
+        Text("המחירים מתעדכנים פעם ביום", style = TextStyles.label, color = c.inkDim)
+        Spacer(Modifier.height(Space.s))
+        com.maites.cookies.data.Chain.entries.forEach { ch ->
+            val err = failed[ch.key]
+            val stores = n[ch.key] ?: 0
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text(ch.emoji, style = TextStyles.body)
+                Spacer(Modifier.width(Space.s))
+                Text(ch.label, style = TextStyles.body, color = c.ink, modifier = Modifier.weight(1f))
+                Text(
+                    when {
+                        err != null -> "לא הצלחנו לקרוא"
+                        stores == 0 -> "אין סניף בעיר"
+                        stores == 1 -> "סניף אחד"
+                        else -> "$stores סניפים"
+                    },
+                    style = TextStyles.label, color = when { err != null -> c.danger; stores == 0 -> c.inkFaint; else -> c.good },
+                )
+            }
+        }
+        if (failed.isNotEmpty()) {
+            Text(failed.values.first().take(60), style = TextStyles.caption, color = c.inkFaint)
+            Spacer(Modifier.height(Space.s))
+            GhostButton(if (busy) "מנסה…" else "לנסות שוב", {
+                if (!busy) scope.launch { busy = true; app.priceSync.sync(force = true); busy = false }
+            }, Modifier.fillMaxWidth())
+            Spacer(Modifier.height(Space.s))
+        }
     }
-    val t = java.text.SimpleDateFormat("d.M HH:mm", java.util.Locale.getDefault()).format(java.util.Date(s.at))
-    return parts.joinToString(" · ") + " · $t"
 }

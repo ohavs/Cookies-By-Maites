@@ -89,6 +89,22 @@ fun rememberPackPrices(app: CookiesApp): Map<Long, Long> {
     }
 }
 
+/** Ingredient cost of a recipe at multiplier [mult]: known sum + how many lines have no price. */
+data class IngredientsCost(val lines: List<Long?>) {
+    val sum get() = lines.sumOf { it ?: 0L }
+    val missing get() = lines.count { it == null }
+}
+
+@Composable
+fun rememberIngredientsCost(app: CookiesApp, items: List<com.maites.cookies.data.IngredientEntity>, mult: Double = 1.0): IngredientsCost {
+    val products by app.db.products().all().collectAsStateWithLifecycle(emptyList())
+    val prices = rememberPackPrices(app)
+    return remember(items, products, prices, mult) {
+        val byId = products.associateBy { it.id }
+        IngredientsCost(items.map { i -> com.maites.cookies.data.ingredientCost(i.copy(amount = i.amount * mult), i.productId?.let(byId::get), i.productId?.let(prices::get)) })
+    }
+}
+
 fun yieldText(count: Int, label: String) = if (count > 0) "$count ${label.ifBlank { "יחידות" }}" else null
 
 private const val ALL = "all"

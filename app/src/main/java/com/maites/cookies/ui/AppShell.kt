@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -66,6 +67,7 @@ class ProductPg(val id: Long) : Page
 class EditPg(val id: Long? = null, val barcode: String? = null) : Page
 class RecipePg(val id: Long) : Page
 class RecipeEditPg(val id: Long? = null) : Page
+class CostingPg(val id: Long) : Page
 
 enum class Tab(val label: String, val emoji: String) {
     Recipes("מתכונים", "🍪"), Products("מוצרים", "🧈"), Shopping("קניות", "🛒"), Settings("הגדרות", "⚙️")
@@ -114,7 +116,8 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
                     onExisting = { id -> replaceTop(ProductPg(id)) },
                     toast = showToast,
                 )
-                is RecipePg -> RecipePage(app, pg.id, onBack = pop, onEdit = { push(RecipeEditPg(pg.id)) }, onProduct = { push(ProductPg(it)) }, toast = showToast)
+                is RecipePg -> RecipePage(app, pg.id, onBack = pop, onEdit = { push(RecipeEditPg(pg.id)) }, onProduct = { push(ProductPg(it)) }, onCosting = { push(CostingPg(pg.id)) }, toast = showToast)
+                is CostingPg -> CostingPage(app, pg.id, onBack = pop, toast = showToast)
                 is RecipeEditPg -> RecipeEditor(
                     app, pg.id, onClose = pop,
                     onSaved = { id -> if (pg.id == null) replaceTop(RecipePg(id)) else pop() },
@@ -166,16 +169,22 @@ private fun BottomBar(tab: Tab, onTab: (Tab) -> Unit, onAdd: () -> Unit, modifie
             TabItem(Tab.Shopping, tab, onTab)
             TabItem(Tab.Settings, tab, onTab)
         }
-        // Raised "+" sticker
-        Box(
-            Modifier.align(Alignment.TopCenter).offset(y = (-18).dp).size(64.dp)
-                .clip(CircleShape).background(c.stroke).padding(end = 0.dp),
-        )
-        Box(
-            Modifier.align(Alignment.TopCenter).offset(x = (-3).dp, y = (-21).dp).size(62.dp)
-                .clip(CircleShape).background(c.accent).border(2.5.dp, c.stroke, CircleShape).pressable(onAdd),
-            contentAlignment = Alignment.Center,
-        ) { Text("+", style = TextStyles.display, color = c.accentFg) }
+        // Raised "+" sticker: hard shadow down-right, button exactly centred over the gap.
+        Box(Modifier.align(Alignment.TopCenter).offset(y = (-20).dp).size(64.dp)) {
+            Box(Modifier.matchParentSize().absoluteOffset(x = 3.dp, y = 3.dp).clip(CircleShape).background(c.stroke))
+            Box(
+                Modifier.matchParentSize().clip(CircleShape).background(c.accent).border(2.5.dp, c.stroke, CircleShape).pressable(onAdd),
+                contentAlignment = Alignment.Center,
+            ) {
+                // Drawn, not a "+" glyph — font glyphs sit off-centre.
+                androidx.compose.foundation.Canvas(Modifier.size(22.dp)) {
+                    val w = 3.5.dp.toPx()
+                    val col = c.accentFg
+                    drawLine(col, androidx.compose.ui.geometry.Offset(size.width / 2, 0f), androidx.compose.ui.geometry.Offset(size.width / 2, size.height), w, androidx.compose.ui.graphics.StrokeCap.Round)
+                    drawLine(col, androidx.compose.ui.geometry.Offset(0f, size.height / 2), androidx.compose.ui.geometry.Offset(size.width, size.height / 2), w, androidx.compose.ui.graphics.StrokeCap.Round)
+                }
+            }
+        }
     }
 }
 
