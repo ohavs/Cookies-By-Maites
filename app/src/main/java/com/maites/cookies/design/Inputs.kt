@@ -49,6 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -68,6 +70,9 @@ fun CTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     ltr: Boolean = false,
+    focus: androidx.compose.ui.focus.FocusRequester? = null,
+    onFocus: ((Boolean) -> Unit)? = null,
+    keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val c = C.colors
@@ -83,8 +88,10 @@ fun CTextField(
                     value, onChange, singleLine = true,
                     textStyle = TextStyles.body.copy(color = c.ink, textDirection = if (ltr) TextDirection.Ltr else TextDirection.Content),
                     cursorBrush = SolidColor(c.accent),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = keyboardType),
+                    modifier = Modifier.fillMaxWidth()
+                        .then(if (focus != null) Modifier.focusRequester(focus) else Modifier)
+                        .then(if (onFocus != null) Modifier.onFocusChanged { onFocus(it.isFocused) } else Modifier),
                 )
             }
             if (trailing != null) trailing()
@@ -307,3 +314,18 @@ private fun toHundredths(t: String, decimals: Int): Long? {
 
 private fun fromHundredths(v: Long, decimals: Int): String =
     if (decimals == 0) v.toString() else java.math.BigDecimal(v).movePointLeft(2).stripTrailingZeros().toPlainString()
+
+/** Yes / no question in a sheet. [danger] colours nothing new — the confirm is the sticker button. */
+@Composable
+fun ConfirmSheet(open: Boolean, title: String, line: String, confirm: String, onDismiss: () -> Unit, cancel: String = "ביטול", onConfirm: () -> Unit) {
+    val c = C.colors
+    CSheet(open, onDismiss) {
+        Text(title, style = TextStyles.title, color = c.ink)
+        Text(line, style = TextStyles.body, color = c.inkDim)
+        Spacer(Modifier.height(Space.xl))
+        Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
+            GhostButton(cancel, onDismiss, Modifier.weight(1f))
+            StickerButton(confirm, onConfirm, Modifier.weight(1f))
+        }
+    }
+}

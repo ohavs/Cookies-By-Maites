@@ -93,7 +93,7 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                 Spacer(Modifier.height(Space.m))
                 Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
                     Pill(formatPack(prod.packAmount, prod.unit))
-                    Pill("${prod.category.emoji} ${prod.category.label}", categoryTint(prod.category))
+                    Pill(com.maites.cookies.data.Cats.product(prod.category).let { "${it.emoji} ${it.label}" }, categoryTint(prod.category))
                     prod.barcode?.let { Pill(it, ltr = true) }
                 }
 

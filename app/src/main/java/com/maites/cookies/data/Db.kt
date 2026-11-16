@@ -19,10 +19,6 @@ import kotlinx.coroutines.flow.Flow
 /** Base units: grams / millilitres / units. Money: agorot. */
 enum class BaseUnit { Gram, Milliliter, Unit }
 
-enum class ProductCategory(val label: String, val emoji: String) {
-    Baking("אפייה", "🌾"), Dairy("חלב וביצים", "🥚"), Chocolate("שוקולד", "🍫"), Pantry("מזווה", "🫙"),
-}
-
 @Entity(tableName = "products", indices = [Index("barcode"), Index("gid", unique = true)])
 data class ProductEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -35,7 +31,8 @@ data class ProductEntity(
     val favorite: Boolean = false,
     val updatedAt: Long = System.currentTimeMillis(),
     val brand: String = "",
-    val category: ProductCategory = ProductCategory.Pantry,
+    /** Key of a [CategoryEntity] (kind products). */
+    val category: String = "Pantry",
     val imageUrl: String? = null,
     /** Cloud id (stable across devices). */
     val gid: String = java.util.UUID.randomUUID().toString(),
@@ -49,7 +46,7 @@ data class Tombstone(@PrimaryKey val gid: String, val kind: String)
 
 @Dao
 interface SyncDao {
-    @Query("SELECT (SELECT COUNT(*) FROM products WHERE dirty = 1) + (SELECT COUNT(*) FROM recipes WHERE dirty = 1) + (SELECT COUNT(*) FROM tombstones)")
+    @Query("SELECT (SELECT COUNT(*) FROM products WHERE dirty = 1) + (SELECT COUNT(*) FROM recipes WHERE dirty = 1) + (SELECT COUNT(*) FROM categories WHERE dirty = 1) + (SELECT COUNT(*) FROM tombstones)")
     fun pending(): Flow<Int>
     @Query("SELECT * FROM tombstones") suspend fun tombstones(): List<Tombstone>
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun tomb(t: Tombstone)
@@ -158,7 +155,11 @@ private val M7_8 = object : Migration(7, 8) {
     }
 }
 
-@Database(entities = [ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class, ShopEntry::class, ShopCheck::class], version = 8, exportSchema = false)
+private val M8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) = Cats.seed(db)
+}
+
+@Database(entities = [CategoryEntity::class, ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class, ShopEntry::class, ShopCheck::class], version = 9, exportSchema = false)
 @androidx.room.TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun products(): ProductDao
@@ -167,17 +168,16 @@ abstract class AppDb : RoomDatabase() {
     abstract fun catalog(): CatalogDao
     abstract fun sync(): SyncDao
     abstract fun shop(): ShopDao
+    abstract fun categories(): CategoryDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8).build()
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8, M8_9)
+            .addCallback(object : Callback() { override fun onCreate(db: SupportSQLiteDatabase) = Cats.seed(db) })
+            .build()
     }
 }
 
 class Converters {
     @androidx.room.TypeConverter fun fromUnit(u: BaseUnit) = u.name
     @androidx.room.TypeConverter fun toUnit(s: String) = BaseUnit.valueOf(s)
-    @androidx.room.TypeConverter fun fromCat(c: ProductCategory) = c.name
-    @androidx.room.TypeConverter fun toCat(s: String) = runCatching { ProductCategory.valueOf(s) }.getOrDefault(ProductCategory.Pantry)
-    @androidx.room.TypeConverter fun fromRCat(c: RecipeCategory) = c.name
-    @androidx.room.TypeConverter fun toRCat(s: String) = runCatching { RecipeCategory.valueOf(s) }.getOrDefault(RecipeCategory.Other)
 }

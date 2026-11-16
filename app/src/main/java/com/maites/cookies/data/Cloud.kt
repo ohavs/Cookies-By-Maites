@@ -158,7 +158,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
     /** Called right after sign-in: merge everything on this phone with the account. */
     suspend fun afterSignIn() {
         prefs.resetCloud()
-        db.sync().dirtyProducts(); db.sync().dirtyRecipes()
+        db.sync().dirtyProducts(); db.sync().dirtyRecipes(); db.categories().dirtyAll()
         sync()
     }
 
@@ -169,6 +169,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
         state.value = runCatching {
             withContext(Dispatchers.IO) {
                 val t = auth.token() ?: return@withContext
+                pullCategories(uid, t)
                 pullProducts(uid, t)
                 pullRecipes(uid, t)
                 ProductPhotos.localizeAll(ctx, db.products())
@@ -209,6 +210,19 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
         }
     }
 
+    private suspend fun pullCategories(uid: String, t: String) {
+        val dao = db.categories()
+        changed(uid, "categories", t) { gid, f ->
+            val local = dao.byGid(gid)
+            if (f.bool("deleted")) { if (local != null) dao.deleteRow(gid); return@changed }
+            if (local != null && local.dirty) return@changed
+            dao.put(CategoryEntity(
+                gid = gid, kind = f.str("kind"), label = f.str("label"), emoji = f.str("emoji"),
+                tint = f.long("tint").toInt(), position = f.long("position").toInt(), updatedAt = f.long("updatedAt"), dirty = false,
+            ))
+        }
+    }
+
     private suspend fun pullProducts(uid: String, t: String) {
         val dao = db.products()
         changed(uid, "products", t) { gid, f ->
@@ -228,7 +242,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
                 unit = runCatching { BaseUnit.valueOf(f.str("unit")) }.getOrDefault(BaseUnit.Gram),
                 priceAgorot = f.optJSONObject("price")?.optString("integerValue")?.toLongOrNull(),
                 favorite = f.bool("favorite"), updatedAt = f.long("updatedAt"), brand = f.str("brand"),
-                category = runCatching { ProductCategory.valueOf(f.str("category")) }.getOrDefault(ProductCategory.Pantry),
+                category = f.str("category").ifBlank { "Pantry" },
                 imageUrl = f.str("image").takeIf { it.isNotBlank() }?.let { ProductPhotos.file(ctx, it).absolutePath } ?: f.str("imageUrl").ifBlank { null },
             )
             if (local != null && local.copy(dirty = false) == remote) return@changed
@@ -251,7 +265,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
             val photos = f.arr("photos").map { RecipePhotos.file(ctx, it.optString("stringValue")).absolutePath }
             val r = RecipeEntity(
                 id = local?.id ?: 0, gid = gid, dirty = false,
-                name = f.str("name"), category = runCatching { RecipeCategory.valueOf(f.str("category")) }.getOrDefault(RecipeCategory.Other),
+                name = f.str("name"), category = f.str("category").ifBlank { "Other" },
                 yieldCount = f.long("yieldCount").toInt(), yieldLabel = f.str("yieldLabel"), notes = f.str("notes"),
                 photos = photos.joinToString("\n"), favorite = f.bool("favorite"), updatedAt = f.long("updatedAt"),
                 extras = f.str("extras"), salePrice = f.long("salePrice"), targetMargin = f.long("targetMargin").toInt(),
@@ -295,12 +309,21 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
         commit(t, tombs.map { doc(uid, it.kind, it.gid, JSONObject().put("deleted", JSONObject().put("booleanValue", true))) })
         tombs.forEach { db.sync().untomb(it.gid) }
 
+        val cats = db.categories().dirty()
+        commit(t, cats.map { k ->
+            doc(uid, "categories", k.gid, fields(
+                "kind" to k.kind, "label" to k.label, "emoji" to k.emoji, "tint" to k.tint.toLong(),
+                "position" to k.position.toLong(), "updatedAt" to k.updatedAt,
+            ))
+        })
+        cats.forEach { db.categories().markClean(it.gid, it.updatedAt) }
+
         val products = db.products().dirty()
         commit(t, products.map { p ->
             doc(uid, "products", p.gid, fields(
                 "name" to p.name, "barcode" to p.barcode, "packAmount" to p.packAmount, "unit" to p.unit.name,
                 "price" to p.priceAgorot, "favorite" to p.favorite, "updatedAt" to p.updatedAt, "brand" to p.brand,
-                "category" to p.category.name,
+                "category" to p.category,
                 "image" to p.imageUrl?.takeIf(ProductPhotos::isLocal)?.let { File(it).name },
                 "imageUrl" to p.imageUrl?.takeIf { !ProductPhotos.isLocal(it) },
             ))
@@ -319,7 +342,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
                 fields("p" to i.productId?.let { db.products().once(it)?.gid }, "n" to i.name, "a" to i.amount, "u" to i.unit.name, "i" to i.icon)
             }
             doc(uid, "recipes", r.gid, fields(
-                "name" to r.name, "category" to r.category.name, "yieldCount" to r.yieldCount.toLong(), "yieldLabel" to r.yieldLabel,
+                "name" to r.name, "category" to r.category, "yieldCount" to r.yieldCount.toLong(), "yieldLabel" to r.yieldLabel,
                 "notes" to r.notes, "favorite" to r.favorite, "updatedAt" to r.updatedAt, "extras" to r.extras,
                 "salePrice" to r.salePrice, "targetMargin" to r.targetMargin.toLong(),
                 "photos" to r.photoList.map { File(it).name },

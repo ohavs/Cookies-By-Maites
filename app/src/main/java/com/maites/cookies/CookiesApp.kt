@@ -18,6 +18,7 @@ class CookiesApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        applicationScope.launch { db.categories().all().collect { com.maites.cookies.data.Cats.all = it } }
         cloud.start()
         applicationScope.launch { com.maites.cookies.data.ProductPhotos.localizeAll(this@CookiesApp, db.products()) }
     }

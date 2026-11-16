@@ -69,6 +69,7 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
     var extraEdit by remember { mutableStateOf<Int?>(null) }
     var salePad by remember { mutableStateOf(false) }
     var marginPad by remember { mutableStateOf(false) }
+    var removeExtra by remember { mutableStateOf<Int?>(null) }
     val r = recipe ?: return
     val extras = r.extraList
     val cost = Costing.of(ingredients.sum, extras, r.yieldCount, 1.0)
@@ -173,6 +174,7 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
         ExtraSheet(extraEdit?.let { if (it < 0) null else extras.getOrNull(it) }, extraEdit != null, { extraEdit = null }) { result ->
             val i = extraEdit ?: return@ExtraSheet
             extraEdit = null
+            if (result == null && i >= 0) { removeExtra = i; return@ExtraSheet }
             val list = extras.toMutableList()
             when {
                 result == null -> if (i >= 0) list.removeAt(i)
@@ -180,6 +182,13 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
                 else -> list[i] = result
             }
             save(e = list)
+        }
+
+        com.maites.cookies.design.ConfirmSheet(
+            removeExtra != null, "להסיר את ${removeExtra?.let { extras.getOrNull(it)?.name }.orEmpty()}?", "העלות הנוספת תוסר מהתמחיר.", "הסרה", { removeExtra = null },
+        ) {
+            val i = removeExtra; removeExtra = null
+            if (i != null && i in extras.indices) save(e = extras.toMutableList().also { it.removeAt(i) })
         }
 
         KeypadSheet(

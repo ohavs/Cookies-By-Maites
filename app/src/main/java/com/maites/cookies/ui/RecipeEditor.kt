@@ -48,7 +48,9 @@ import com.maites.cookies.CookiesApp
 import com.maites.cookies.data.BaseUnit
 import com.maites.cookies.data.IngredientEntity
 import com.maites.cookies.data.ProductEntity
-import com.maites.cookies.data.RecipeCategory
+import com.maites.cookies.data.Cats
+import com.maites.cookies.data.KIND_RECIPES
+import com.maites.cookies.design.ConfirmSheet
 import com.maites.cookies.data.RecipeEntity
 import com.maites.cookies.data.RecipePhotos
 import com.maites.cookies.data.ingredientCost
@@ -87,7 +89,7 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
     var loaded by remember { mutableStateOf(id == null) }
     var original by remember { mutableStateOf<RecipeEntity?>(null) }
     var name by remember { mutableStateOf("") }
-    var cat by remember { mutableStateOf(RecipeCategory.Cookies) }
+    var cat by remember { mutableStateOf(Cats.firstKey(KIND_RECIPES)) }
     var yieldCount by remember { mutableStateOf(0) }
     var yieldLabel by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
@@ -99,12 +101,18 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
     var amountFor by remember { mutableStateOf<Int?>(null) }
     var editIdx by remember { mutableStateOf<Int?>(null) }
     var importing by remember { mutableStateOf(0) }
+    var removePhoto by remember { mutableStateOf<String?>(null) }
+    var removeItem by remember { mutableStateOf<Int?>(null) }
+    var askLeave by remember { mutableStateOf(false) }
+    var initial by remember { mutableStateOf<List<Any?>?>(null) }
+    fun snapshot(): List<Any?> = listOf(name.trim(), cat, yieldCount, yieldLabel.trim(), notes.trim(), photos.toList(), items.toList())
 
     LaunchedEffect(id) {
         if (id != null) dao.byId(id).first()?.let { r ->
             original = r; name = r.name; cat = r.category; yieldCount = r.yieldCount; yieldLabel = r.yieldLabel; notes = r.notes
             photos.addAll(r.photoList); items.addAll(dao.ingredients(id).first())
         }
+        initial = snapshot()
         loaded = true
     }
 
@@ -118,11 +126,13 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
 
     if (!loaded) return
     val valid = name.isNotBlank()
+    val dirty = initial != null && initial != snapshot()
+    LeaveGuard(dirty) { askLeave = true }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
             Row(Modifier.fillMaxWidth().padding(horizontal = Space.gutter, vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
-                RoundButton("✕", onClose)
+                RoundButton("✕", { if (dirty) askLeave = true else onClose() })
                 Spacer(Modifier.size(Space.m))
                 Text(if (id == null) "מתכון חדש" else "עריכת מתכון", style = TextStyles.title, color = c.ink)
             }
@@ -132,7 +142,7 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
                     photos.forEachIndexed { i, path ->
                         PhotoThumb(path, cat, main = i == 0,
                             onMain = { if (i > 0) { photos.removeAt(i); photos.add(0, path); toast("נבחרה תמונה ראשית") } },
-                            onRemove = { photos.removeAt(i) })
+                            onRemove = { removePhoto = path })
                     }
                     repeat(importing) { Box(Modifier.size(96.dp).clip(RoundedCornerShape(18.dp)).background(c.surface2)) }
                     Box(
@@ -152,9 +162,7 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
                 CTextField(name, { name = it }, "שם המתכון", placeholder = "למשל: עוגיות שוקולד צ׳יפס")
                 Spacer(Modifier.height(Space.l))
                 SectionLabel("קטגוריה")
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-                    RecipeCategory.entries.forEach { k -> CChip(k.label, cat == k, { cat = k }, k.emoji) }
-                }
+                CategoryChips(app, KIND_RECIPES, cat) { cat = it }
 
                 Spacer(Modifier.height(Space.l))
                 SectionLabel("כמה יוצא")
@@ -215,7 +223,7 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
                 chooserFor = null
                 val line = IngredientEntity(
                     recipeId = 0, position = 0, productId = p?.id, name = p?.name ?: free,
-                    amount = 0.0, unit = p?.unit ?: BaseUnit.Gram, icon = p?.category?.emoji ?: "🥣",
+                    amount = 0.0, unit = p?.unit ?: BaseUnit.Gram, icon = p?.let { com.maites.cookies.data.Cats.product(it.category).emoji } ?: "🥣",
                 )
                 if (target == NEW) { items.add(line); amountFor = items.lastIndex }
                 else {
@@ -225,6 +233,17 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
                 }
             },
         )
+
+        ConfirmSheet(removePhoto != null, "להסיר את התמונה?", "היא תימחק מהמתכון כשתשמרי.", "הסרה", { removePhoto = null }) {
+            removePhoto?.let { photos.remove(it) }; removePhoto = null
+        }
+        val removing = removeItem?.let { items.getOrNull(it) }
+        ConfirmSheet(removing != null, "להסיר את ${removing?.let { i -> byId[i.productId]?.name ?: i.name }.orEmpty()}?", "המרכיב יוסר מהמתכון.", "הסרה", { removeItem = null }) {
+            removeItem?.let { if (it in items.indices) items.removeAt(it) }; removeItem = null
+        }
+        ConfirmSheet(askLeave, "לצאת בלי לשמור?", "השינויים במתכון לא יישמרו.", "יציאה", { askLeave = false }, cancel = "להמשיך לערוך") {
+            askLeave = false; initial = null; onClose()
+        }
 
         val amountLine = amountFor?.let { items.getOrNull(it) }
         KeypadSheet(
@@ -267,7 +286,7 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
             }
             Spacer(Modifier.height(Space.xl))
             Row(horizontalArrangement = Arrangement.spacedBy(Space.m)) {
-                GhostButton("הסרה", { items.removeAt(idx); editIdx = null }, Modifier.weight(1f))
+                GhostButton("הסרה", { editIdx = null; removeItem = idx }, Modifier.weight(1f))
                 GhostButton(if (p != null) "החלפת מוצר" else "קישור למוצר", { editIdx = null; chooserFor = idx }, Modifier.weight(1f))
             }
         }
@@ -315,7 +334,7 @@ private fun ProductChooser(open: Boolean, products: List<ProductEntity>, onDismi
 }
 
 @Composable
-private fun PhotoThumb(path: String, cat: RecipeCategory, main: Boolean, onMain: () -> Unit, onRemove: () -> Unit) {
+private fun PhotoThumb(path: String, cat: String, main: Boolean, onMain: () -> Unit, onRemove: () -> Unit) {
     val c = C.colors
     Box(Modifier.size(96.dp)) {
         RecipePhoto(path, cat, Modifier.fillMaxSize().pressable(onMain), corner = 18.dp)

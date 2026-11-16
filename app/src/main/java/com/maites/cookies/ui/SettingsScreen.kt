@@ -54,7 +54,7 @@ import com.maites.cookies.update.Updater
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onPickCity: () -> Unit) {
+fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onPickCity: () -> Unit, onCategories: () -> Unit) {
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 120.dp)) {
         ScreenTitle("הגדרות")
@@ -75,6 +75,14 @@ fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onP
                     }
                     Spacer(Modifier.height(Space.s))
                     Text(prefs.accent.label, style = TextStyles.label, color = C.colors.inkDim)
+                }
+            }
+            Column {
+                SectionLabel("ארגון")
+                CCard(padding = androidx.compose.foundation.layout.PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
+                    SettingRow("קטגוריות", "הוספה, שינוי שם, אייקון וצבע", onCategories) {
+                        Text("🗂️", style = TextStyles.heading)
+                    }
                 }
             }
             Column {

@@ -39,7 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import com.maites.cookies.CookiesApp
-import com.maites.cookies.data.RecipeCategory
+import com.maites.cookies.data.Cats
+import com.maites.cookies.data.KIND_RECIPES
 import com.maites.cookies.data.RecipeRow
 import com.maites.cookies.data.priceKey
 import com.maites.cookies.design.C
@@ -53,19 +54,14 @@ import com.maites.cookies.design.TextStyles
 import java.io.File
 
 @Composable
-fun recipeTint(cat: RecipeCategory): Color = with(C.colors) {
-    when (cat) {
-        RecipeCategory.Cookies -> tPeach; RecipeCategory.Cakes -> tRose; RecipeCategory.Pastry -> tButter
-        RecipeCategory.Desserts -> tLav; RecipeCategory.Other -> tMint
-    }
-}
+fun recipeTint(key: String): Color = tintOf(Cats.recipe(key).tint)
 
 /** A recipe photo (local file), or the category emoji on its tint. */
 @Composable
-fun RecipePhoto(path: String?, cat: RecipeCategory, modifier: Modifier = Modifier, corner: Dp = 18.dp, iconSize: Dp = 44.dp) {
+fun RecipePhoto(path: String?, cat: String, modifier: Modifier = Modifier, corner: Dp = 18.dp, iconSize: Dp = 44.dp) {
     val fallback: @Composable () -> Unit = {
         Box(Modifier.fillMaxSize().background(recipeTint(cat)), contentAlignment = Alignment.Center) {
-            Text(cat.emoji, style = TextStyles.display.copy(fontSize = with(LocalDensity.current) { (iconSize * 0.6f).toSp() }))
+            Text(Cats.recipe(cat).emoji, style = TextStyles.display.copy(fontSize = with(LocalDensity.current) { (iconSize * 0.6f).toSp() }))
         }
     }
     Box(modifier.clip(RoundedCornerShape(corner)), contentAlignment = Alignment.Center) {
@@ -135,13 +131,13 @@ fun RecipesScreen(app: CookiesApp, onAdd: () -> Unit, onOpen: (Long) -> Unit) {
         ) {
             CChip("הכל", filter == ALL, { filter = ALL })
             CChip("מועדפים", filter == FAV, { filter = FAV }, "❤️")
-            RecipeCategory.entries.filter { cat -> list.any { it.category == cat } }
-                .forEach { cat -> CChip(cat.label, filter == cat.name, { filter = cat.name }, cat.emoji) }
+            Cats.list(KIND_RECIPES).filter { cat -> list.any { Cats.recipe(it.category).gid == cat.gid } }
+                .forEach { cat -> CChip(cat.label, filter == cat.gid, { filter = cat.gid }, cat.emoji) }
         }
         val needle = q.trim().lowercase()
         val shown = list.filter { r ->
             (needle.isEmpty() || r.name.lowercase().contains(needle)) &&
-                (filter == ALL || (filter == FAV && r.favorite) || r.category.name == filter)
+                (filter == ALL || (filter == FAV && r.favorite) || Cats.recipe(r.category).gid == filter)
         }
         if (shown.isEmpty()) {
             Box(Modifier.weight(1f).padding(bottom = 96.dp), contentAlignment = Alignment.Center) {

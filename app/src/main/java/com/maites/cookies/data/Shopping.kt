@@ -122,7 +122,7 @@ object Shopping {
                 }
             }
             val p = e.productId?.let(products::get) ?: continue
-            add("p${p.id}", { ShopLine("p${p.id}", p, p.name, p.category.emoji, p.unit, 0.0) }, e.qty * p.packAmount)
+            add("p${p.id}", { ShopLine("p${p.id}", p, p.name, Cats.product(p.category).emoji, p.unit, 0.0) }, e.qty * p.packAmount)
         }
         return out.values.toList()
     }

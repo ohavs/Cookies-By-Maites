@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
@@ -28,6 +29,24 @@ import androidx.compose.ui.unit.dp
 import com.maites.cookies.design.C
 import com.maites.cookies.design.Springs
 import kotlinx.coroutines.launch
+
+/**
+ * A page that may refuse to close (unsaved changes) registers a guard here: it returns true when it
+ * handled the close itself (e.g. asked "leave without saving?").
+ */
+val LocalLeaveGuard = androidx.compose.runtime.staticCompositionLocalOf<((() -> Boolean)?) -> Unit> { {} }
+
+/** Asks [onAsk] instead of closing while [dirty] — for back, edge swipe and the page's own ✕. */
+@Composable
+fun LeaveGuard(dirty: Boolean, onAsk: () -> Unit) {
+    val set = LocalLeaveGuard.current
+    val d by androidx.compose.runtime.rememberUpdatedState(dirty)
+    val ask by androidx.compose.runtime.rememberUpdatedState(onAsk)
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        set { if (d) { ask(); true } else false }
+        onDispose { set(null) }
+    }
+}
 
 private class Entry(val page: Any) {
     /** 0 = on screen, 1 = fully off towards the end side. */
@@ -48,6 +67,12 @@ fun PageHost(stack: List<Any>, onPop: () -> Unit, content: @Composable (Any) -> 
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val sign = if (rtl) -1f else 1f
     val flingV = remember { FloatArray(1) } // speed of the swipe that popped, handed to the exit
+    val guards = remember { mutableMapOf<Any, () -> Boolean>() }
+    /** Pops unless the top page's guard takes over. Returns whether it popped. */
+    val tryPop: () -> Boolean = {
+        val top = stack.lastOrNull()
+        if (top != null && guards[top]?.invoke() == true) false else { onPop(); true }
+    }
 
     LaunchedEffect(stack.toList()) {
         stack.forEach { p ->
@@ -63,7 +88,7 @@ fun PageHost(stack: List<Any>, onPop: () -> Unit, content: @Composable (Any) -> 
         }
     }
 
-    BackHandler(stack.isNotEmpty(), onPop)
+    BackHandler(stack.isNotEmpty()) { tryPop() }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val w = with(LocalDensity.current) { maxWidth.toPx() }
@@ -78,7 +103,9 @@ fun PageHost(stack: List<Any>, onPop: () -> Unit, content: @Composable (Any) -> 
                         translationX = (e.x.value + under) * w * sign
                     }.background(C.colors.bg),
                 ) {
-                    content(e.page)
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        LocalLeaveGuard provides { g -> if (g == null) { guards.remove(e.page) } else { guards[e.page] = g } },
+                    ) { content(e.page) }
                     if (!e.leaving && e === entries.lastOrNull { !it.leaving }) {
                         Box(
                             Modifier.align(Alignment.CenterStart).fillMaxHeight().width(28.dp).pointerInput(e) {
@@ -88,7 +115,8 @@ fun PageHost(stack: List<Any>, onPop: () -> Unit, content: @Composable (Any) -> 
                                     val v = tracker.calculateVelocity().x * sign / w
                                     tracker.resetTracking()
                                     if (v > 1.2f || (e.x.value > 0.3f && v > -0.5f)) {
-                                        haptics.light(); flingV[0] = v; onPop()
+                                        haptics.light(); flingV[0] = v
+                                        if (!tryPop()) { flingV[0] = 0f; scope.launch { e.x.animateTo(0f, Springs.soft(0.0005f)) } }
                                     } else scope.launch { e.x.animateTo(0f, Springs.soft(0.0005f), initialVelocity = v) }
                                 }
                                 detectHorizontalDragGestures(

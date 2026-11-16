@@ -41,7 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import com.maites.cookies.CookiesApp
-import com.maites.cookies.data.ProductCategory
+import com.maites.cookies.data.Cats
+import com.maites.cookies.data.KIND_PRODUCTS
 import com.maites.cookies.data.ProductEntity
 import com.maites.cookies.design.C
 import com.maites.cookies.design.CCard
@@ -53,9 +54,7 @@ import com.maites.cookies.design.StickerButton
 import com.maites.cookies.design.TextStyles
 
 @Composable
-fun categoryTint(cat: ProductCategory): Color = with(C.colors) {
-    when (cat) { ProductCategory.Baking -> tButter; ProductCategory.Dairy -> tSky; ProductCategory.Chocolate -> tPeach; ProductCategory.Pantry -> tMint }
-}
+fun categoryTint(key: String): Color = tintOf(Cats.product(key).tint)
 
 /** Packaging photo on white; category icon on its tint when there's no photo. */
 @Composable
@@ -64,7 +63,7 @@ fun ProductImage(p: ProductEntity, modifier: Modifier = Modifier, corner: Dp = 1
     val shape = RoundedCornerShape(corner)
     val fallback: @Composable () -> Unit = {
         Box(Modifier.fillMaxSize().background(categoryTint(p.category)), contentAlignment = Alignment.Center) {
-            Text(p.category.emoji, style = TextStyles.display.copy(fontSize = with(androidx.compose.ui.platform.LocalDensity.current) { (iconSize * 0.6f).toSp() }))
+            Text(Cats.product(p.category).emoji, style = TextStyles.display.copy(fontSize = with(androidx.compose.ui.platform.LocalDensity.current) { (iconSize * 0.6f).toSp() }))
         }
     }
     Box(modifier.clip(shape).background(Color.White).border(1.dp, c.divider, shape), contentAlignment = Alignment.Center) {
@@ -109,13 +108,13 @@ fun ProductsScreen(app: CookiesApp, onAdd: () -> Unit, onOpen: (Long) -> Unit) {
         ) {
             CChip("הכל", filter == ALL, { filter = ALL })
             CChip("מועדפים", filter == FAV, { filter = FAV }, "❤️")
-            ProductCategory.entries.forEach { cat -> CChip(cat.label, filter == cat.name, { filter = cat.name }, cat.emoji) }
+            Cats.list(KIND_PRODUCTS).forEach { cat -> CChip(cat.label, filter == cat.gid, { filter = cat.gid }, cat.emoji) }
         }
 
         val needle = q.trim().lowercase()
         val shown = list.filter { p ->
             (needle.isEmpty() || p.name.lowercase().contains(needle) || p.brand.lowercase().contains(needle) || (p.barcode?.contains(needle) == true)) &&
-                (filter == ALL || (filter == FAV && p.favorite) || p.category.name == filter)
+                (filter == ALL || (filter == FAV && p.favorite) || Cats.product(p.category).gid == filter)
         }
         if (shown.isEmpty()) {
             Box(Modifier.weight(1f).padding(bottom = 96.dp), contentAlignment = Alignment.Center) {
@@ -124,7 +123,7 @@ fun ProductsScreen(app: CookiesApp, onAdd: () -> Unit, onOpen: (Long) -> Unit) {
             }
             return
         }
-        val groups = ProductCategory.entries.mapNotNull { cat -> shown.filter { it.category == cat }.takeIf { it.isNotEmpty() }?.let { cat to it } }
+        val groups = Cats.list(KIND_PRODUCTS).mapNotNull { cat -> shown.filter { Cats.product(it.category).gid == cat.gid }.takeIf { it.isNotEmpty() }?.let { cat to it } }
         LazyVerticalGrid(
             GridCells.Fixed(2),
             Modifier.weight(1f),

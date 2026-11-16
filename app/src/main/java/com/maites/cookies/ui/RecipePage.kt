@@ -89,7 +89,7 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
                 Text(r.name, style = TextStyles.display, color = c.ink)
                 Spacer(Modifier.height(Space.m))
                 Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-                    Pill("${r.category.emoji} ${r.category.label}", recipeTint(r.category))
+                    Pill(com.maites.cookies.data.Cats.recipe(r.category).let { "${it.emoji} ${it.label}" }, recipeTint(r.category))
                     yieldText(r.yieldCount, r.yieldLabel)?.let { Pill(it) }
                 }
 
@@ -156,7 +156,7 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
 /** Swipeable photo gallery with dots; category art when there are no photos. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Gallery(photos: List<String>, cat: com.maites.cookies.data.RecipeCategory) {
+private fun Gallery(photos: List<String>, cat: String) {
     val c = C.colors
     val mod = Modifier.padding(horizontal = Space.gutter).fillMaxWidth().height(280.dp)
     if (photos.isEmpty()) { RecipePhoto(null, cat, mod, corner = 28.dp, iconSize = 120.dp); return }

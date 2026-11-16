@@ -22,16 +22,12 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 
-enum class RecipeCategory(val label: String, val emoji: String) {
-    Cookies("עוגיות", "🍪"), Cakes("עוגות", "🎂"), Pastry("מאפים", "🥐"), Desserts("קינוחים", "🍮"), Other("אחר", "🥣"),
-}
-
 /** [photos]: local file paths, "\n"-separated; the first is the main photo. [yieldCount]: units the recipe makes. */
 @Entity(tableName = "recipes", indices = [Index("gid", unique = true)])
 data class RecipeEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
-    val category: RecipeCategory = RecipeCategory.Cookies,
+    val category: String = "Cookies",
     val yieldCount: Int = 0,
     val yieldLabel: String = "",
     val notes: String = "",
@@ -117,7 +113,7 @@ data class IngredientEntity(
     val icon: String,
 )
 
-data class RecipeRow(val id: Long, val name: String, val category: RecipeCategory, val yieldCount: Int, val yieldLabel: String, val photos: String, val favorite: Boolean, val count: Int)
+data class RecipeRow(val id: Long, val name: String, val category: String, val yieldCount: Int, val yieldLabel: String, val photos: String, val favorite: Boolean, val count: Int)
 
 @Dao
 interface RecipeDao {

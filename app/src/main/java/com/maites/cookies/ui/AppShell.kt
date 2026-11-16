@@ -68,6 +68,7 @@ class EditPg(val id: Long? = null, val barcode: String? = null) : Page
 class RecipePg(val id: Long) : Page
 class RecipeEditPg(val id: Long? = null) : Page
 class CostingPg(val id: Long) : Page
+object CategoriesPg : Page
 
 enum class Tab(val label: String, val emoji: String) {
     Recipes("מתכונים", "🍪"), Products("מוצרים", "🧈"), Shopping("קניות", "🛒"), Settings("הגדרות", "⚙️")
@@ -103,7 +104,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
                 Tab.Recipes -> RecipesScreen(app, onAdd = { push(RecipeEditPg()) }, onOpen = { push(RecipePg(it)) })
                 Tab.Products -> ProductsScreen(app, onAdd = { push(EditPg()) }, onOpen = { push(ProductPg(it)) })
                 Tab.Shopping -> ShoppingScreen(app, onAdd = { shopAdd = true }, onClear = { shopClear = true }, onPickCity = { cityOpen = true }, onRecipe = { push(RecipePg(it)) }, onProduct = { push(ProductPg(it)) }, toast = showToast)
-                Tab.Settings -> SettingsScreen(app, prefs, showToast, onPickCity = { cityOpen = true })
+                Tab.Settings -> SettingsScreen(app, prefs, showToast, onPickCity = { cityOpen = true }, onCategories = { push(CategoriesPg) })
             }
         }
 
@@ -120,6 +121,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
                 )
                 is RecipePg -> RecipePage(app, pg.id, onBack = pop, onEdit = { push(RecipeEditPg(pg.id)) }, onProduct = { push(ProductPg(it)) }, onCosting = { push(CostingPg(pg.id)) }, toast = showToast)
                 is CostingPg -> CostingPage(app, pg.id, onBack = pop, toast = showToast)
+                is CategoriesPg -> CategoriesPage(app, onBack = pop)
                 is RecipeEditPg -> RecipeEditor(
                     app, pg.id, onClose = pop,
                     onSaved = { id -> if (pg.id == null) replaceTop(RecipePg(id)) else pop() },
