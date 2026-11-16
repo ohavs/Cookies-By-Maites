@@ -8,6 +8,10 @@ Env:
   FIREBASE_TOKEN     firebase-tools refresh token (CI secret)
   BARCODES           optional comma list (skips `watch`, for local tests)
   DRY_RUN=1          print instead of writing
+
+Also writes catalog.tsv.gz (every packaged item seen in any chain:
+code, name, brand, amount, unit G/M/U, store count) — the app searches it by
+name, so products can get prices without scanning a barcode.
 """
 import gzip
 import http.cookiejar
@@ -20,6 +24,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+import threading
 from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -162,21 +167,78 @@ CHAINS = [
 ]
 
 
+CATALOG = {}          # code -> [name, brand, amount, unit, stores]
+CATALOG_LOCK = threading.Lock()
+
+
+def base_amount(qty, unit):
+    """("500", "גרם") -> (500, "G"); kg/l -> x1000; units -> "U"."""
+    try:
+        q = float(qty)
+    except ValueError:
+        return 0, ""
+    u = unit.replace('"', "").replace("'", "").replace("״", "").replace(" ", "")
+    if q <= 0 or not u:
+        return 0, ""
+    if u.startswith("קג") or u.startswith("קילו") or u == "קג":
+        return q * 1000, "G"
+    if u.startswith("גר") or u == "ג":
+        return q, "G"
+    if u.startswith("מל") or u.startswith("מיליל") or u.startswith("מ\"ל"):
+        return q, "M"
+    if u.startswith("ליטר") or u == "ל":
+        return q * 1000, "M"
+    if u.startswith("יח"):
+        return q, "U"
+    return 0, ""
+
+
+def add_catalog(local):
+    with CATALOG_LOCK:
+        for code, row in local.items():
+            cur = CATALOG.get(code)
+            if cur is None:
+                CATALOG[code] = row + [1]
+            else:
+                cur[4] += 1
+                if not cur[1] and row[1]:
+                    cur[1] = row[1]
+                if not cur[3] and row[3]:
+                    cur[2], cur[3] = row[2], row[3]
+
+
+def write_catalog(path="catalog.tsv.gz"):
+    clean = lambda v: str(v).replace("\t", " ").replace("\n", " ").strip()
+    rows = sorted(CATALOG.items(), key=lambda kv: -kv[1][4])
+    with gzip.open(path, "wt", encoding="utf-8") as f:
+        for code, (name, brand, amount, unit, n) in rows:
+            amt = ("%g" % amount) if unit else ""
+            f.write(f"{code}\t{clean(name)}\t{clean(brand)}\t{amt}\t{unit}\t{n}\n")
+    print(f"catalog: {len(rows)} items -> {path}", flush=True)
+
+
 def parse_prices(blob, watched):
-    """-> (storeId, {barcode: (agorot, name)})"""
-    store, found = None, {}
+    """-> (storeId, {barcode: (agorot, name)}); also feeds CATALOG."""
+    store, found, local = None, {}, {}
     for _, el in ET.iterparse(io.BytesIO(maybe_gunzip(blob)), events=("end",)):
         tag = el.tag
         if tag == "StoreID" or tag == "StoreId":
             store = str(int(el.text.strip()))
         elif tag in ("Item", "Product"):
             code = text(el, "ItemCode").lstrip("0")
-            if code in watched and text(el, "bIsWeighted") != "1":
+            weighted = text(el, "bIsWeighted") == "1"
+            if not weighted and len(code) >= 7 and code.isdigit() and code not in local:
+                nm = text(el, "ItemName") or text(el, "ItemNm")
+                if nm:
+                    amount, unit = base_amount(text(el, "Quantity"), text(el, "UnitQty"))
+                    local[code] = [nm, text(el, "ManufacturerName"), amount, unit]
+            if code in watched and not weighted:
                 try:
                     found[code] = (round(float(text(el, "ItemPrice")) * 100), text(el, "ItemName"))
                 except ValueError:
                     pass
             el.clear()
+    add_catalog(local)
     return store, found
 
 
@@ -298,6 +360,9 @@ def main():
                 all_names.setdefault(code, nm)
         except Exception as e:
             print(f"::warning::{ch.key} failed: {e}", flush=True)
+
+    if CATALOG:
+        write_catalog()
 
     if dry:
         for code, m in all_prices.items():

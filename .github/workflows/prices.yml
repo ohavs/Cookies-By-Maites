@@ -12,6 +12,9 @@ concurrency:
   group: prices
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   prices:
     runs-on: ubuntu-latest
@@ -49,3 +52,12 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: python scripts/prices/fetch.py
+
+      - name: Publish product catalog
+        if: always() && hashFiles('catalog.tsv.gz') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la catalog.tsv.gz
+          gh release view catalog >/dev/null 2>&1 || gh release create catalog --title "Product catalog" --notes "Daily product catalog for name search (not an app release)." --prerelease --latest=false
+          gh release upload catalog catalog.tsv.gz --clobber
