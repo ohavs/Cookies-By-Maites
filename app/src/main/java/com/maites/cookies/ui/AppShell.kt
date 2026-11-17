@@ -89,6 +89,9 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
     var toast by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(2200); toast = null } }
     val showToast: (String) -> Unit = { toast = it }
+    val update = com.maites.cookies.update.rememberUpdateFlow(showToast)
+    var updateOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { update.check().join(); if (update.state is com.maites.cookies.update.UpdateState.Available) updateOpen = true }
     val stack = remember { mutableStateListOf<Page>() }
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -138,6 +141,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
         CityPickerSheet(app, cityOpen, { cityOpen = false }, showToast)
         CookbookSheet(app, cookbook, { cookbook = false }, showToast)
         ImportSheet(app, excel, { excel = false }, showToast)
+        com.maites.cookies.update.UpdateSheet(updateOpen, update, { updateOpen = false })
 
         Overlay(top = true) { Box(Modifier.fillMaxSize()) { Toast(toast, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 104.dp)) } }
 

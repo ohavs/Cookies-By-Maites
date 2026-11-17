@@ -122,35 +122,15 @@ fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onP
 
 @Composable
 private fun UpdateCard(toast: (String) -> Unit) {
-    val ctx = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val flow = com.maites.cookies.update.rememberUpdateFlow(toast)
     val c = C.colors
-    var state by remember { mutableStateOf<UpdateState>(UpdateState.Idle) }
-    var pendingInstall by remember { mutableStateOf<java.io.File?>(null) }
-
-    LifecycleResumeEffect(pendingInstall) {
-        val f = pendingInstall
-        if (f != null && Updater.canInstall(ctx)) { pendingInstall = null; Updater.install(ctx, f) }
-        onPauseOrDispose { }
-    }
-
-    fun check() = scope.launch {
-        state = UpdateState.Checking
-        state = runCatching { Updater.latest() }.fold(
-            onSuccess = { r -> if (r != null && Updater.isNewer(r)) UpdateState.Available(r) else UpdateState.UpToDate },
-            onFailure = { UpdateState.Error("אין חיבור ל-GitHub. נסי שוב.") },
-        )
-    }
-
-    fun install(f: java.io.File) {
-        if (Updater.canInstall(ctx)) Updater.install(ctx, f)
-        else { pendingInstall = f; toast("צריך לאשר התקנה מהאפליקציה — פעם אחת"); ctx.startActivity(Updater.installPermissionIntent(ctx)) }
-    }
+    fun check() = flow.check()
+    fun install(f: java.io.File) = flow.install(f)
 
     CCard {
         SettingRow("גרסה ${BuildConfig.VERSION_NAME}", "Cookies by Maites")
         Spacer(Modifier.height(Space.s))
-        AnimatedContent(state, transitionSpec = { fadeIn(Springs.soft()) togetherWith fadeOut(Springs.soft()) }, label = "upd") { s ->
+        AnimatedContent(flow.state, transitionSpec = { fadeIn(Springs.soft()) togetherWith fadeOut(Springs.soft()) }, label = "upd") { s ->
             Column {
                 when (s) {
                     UpdateState.Idle -> StickerButton("בדוק עדכונים", { check() })
@@ -163,14 +143,7 @@ private fun UpdateCard(toast: (String) -> Unit) {
                         Text("גרסה ${s.release.versionName} זמינה", style = TextStyles.heading, color = c.accentInk)
                         if (s.release.notes.isNotBlank()) Text(s.release.notes, style = TextStyles.label, color = c.inkDim, maxLines = 4)
                         Spacer(Modifier.height(Space.m))
-                        StickerButton("הורד והתקן", {
-                            scope.launch {
-                                state = UpdateState.Downloading(0f)
-                                runCatching { Updater.download(ctx, s.release) { p -> state = UpdateState.Downloading(p) } }
-                                    .onSuccess { f -> state = UpdateState.Ready(f); install(f) }
-                                    .onFailure { state = UpdateState.Error("ההורדה נכשלה. נסי שוב.") }
-                            }
-                        })
+                        StickerButton("הורד והתקן", { flow.download(s.release) })
                     }
                     is UpdateState.Downloading -> {
                         Text("מורידה… ${(s.progress * 100).toInt()}%", style = TextStyles.body, color = c.inkDim)
