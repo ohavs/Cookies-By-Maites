@@ -72,11 +72,25 @@ fun CatalogSheet(app: CookiesApp, open: Boolean, initial: String, onDismiss: () 
                         Column(Modifier.weight(1f)) {
                             Text(i.name, style = TextStyles.heading, color = c.ink, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             val size = i.baseUnit?.takeIf { i.amount > 0 }?.let { formatPack(i.amount, it) }
-                            Text(listOfNotNull(i.brand.ifBlank { null }, size, "${i.stores} סניפים").joinToString(" · "), style = TextStyles.label, color = c.inkDim, maxLines = 1)
+                            Text(listOfNotNull(i.brand.ifBlank { null }, size).joinToString(" · ").ifBlank { "${i.stores} סניפים" }, style = TextStyles.label, color = c.inkDim, maxLines = 1)
                         }
+                        CatalogPrice(i)
                     }
                 }
             }
         }
+    }
+}
+
+/** Cheapest typical price and its chain ("רמי לוי · +3" when other chains sell it too). */
+@Composable
+fun CatalogPrice(i: CatalogItem) {
+    val c = C.colors
+    val all = i.chainPrices
+    val best = all.firstOrNull() ?: return
+    Spacer(Modifier.width(Space.s))
+    Column(horizontalAlignment = Alignment.End) {
+        Text(formatShekel(best.second), style = TextStyles.heading, color = c.ink, maxLines = 1)
+        Text(best.first.label + if (all.size > 1) " · +${all.size - 1}" else "", style = TextStyles.label, color = c.inkDim, maxLines = 1)
     }
 }

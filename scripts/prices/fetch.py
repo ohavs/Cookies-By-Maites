@@ -10,8 +10,9 @@ Env:
   DRY_RUN=1          print instead of writing
 
 Also writes catalog.tsv.gz (every packaged item seen in any chain:
-code, name, brand, amount, unit G/M/U, store count) — the app searches it by
-name, so products can get prices without scanning a barcode.
+code, name without size, brand, amount, unit G/M/U, store count, typical
+shelf price per chain "chain:agorot,...") — the app searches it by name, so
+products can get prices without scanning a barcode.
 """
 import gzip
 import http.cookiejar
@@ -57,6 +58,65 @@ def city_name(raw):
     if raw.isdigit():
         return CITIES.get(str(int(raw)), "")
     return raw
+
+
+def _ckey(s):
+    s = s.replace("קריית", "קרית").replace("תקוה", "תקווה")
+    return " ".join(re.sub(r"[^\wא-ת ]", " ", s).split())
+
+
+CITY_ALIASES = {"תא": "תל אביב - יפו", "תל אביב": "תל אביב - יפו", "יפו": "תל אביב - יפו",
+                "בש": "באר שבע", "פת": "פתח תקווה", "ראשלצ": "ראשון לציון", "ראשון": "ראשון לציון",
+                "מודיעין": "מודיעין-מכבים-רעות", "דלית אל כרמל": "דאלית אל-כרמל", "מישור אדומים": "מעלה אדומים",
+                # Localities whose names are also common words / street names.
+                "ים": "", "גדול": "", "אזור": "", "רחוב": "", "כרמל": "", "אלון": "", "מבקיעים": "",
+                "עקרון": "", "שקמים": "", "הדרים": ""}
+CITY_KEYS = None
+
+
+def guess_city(*texts):
+    """City from a store name / address when the chain leaves City empty (Yochananof)."""
+    global CITY_KEYS
+    if CITY_KEYS is None:
+        CITY_KEYS = {}
+        for name in CITIES.values():
+            for v in {name, name.split(" - ")[0], name.split("-")[0]}:
+                k = _ckey(v)
+                if len(k) >= 3:
+                    CITY_KEYS.setdefault(k, name)
+        for a, name in CITY_ALIASES.items():
+            CITY_KEYS[_ckey(a) if len(a) > 2 else a] = name
+    for t in texts:
+        k = " " + _ckey((t or "").replace('"', "").replace("'", "")) + " "
+        best = ""
+        for key, name in CITY_KEYS.items():
+            if name and len(key) > len(best) and f" {key} " in k:
+                best = key
+        if best:
+            return CITY_KEYS[best]
+    return ""
+
+
+def fill_cities(stores):
+    for st in stores.values():
+        if not st["c"]:
+            st["c"] = guess_city(st["n"], st["a"])
+    return stores
+
+
+SIZE_RE = re.compile(
+    r"\d+(?:[.,]\d+)?\s*(?:[*xX×]\s*\d+(?:[.,]\d+)?\s*)?"
+    r"(?:גרם|גר'?|ג'?|ק\"ג|קג|קילו|מ\"ל|מל|ליטר|ל'|יח'|יחידות|יח)(?![א-ת])"
+    r"(?:\s*[*xX×]\s*\d+)?")
+
+
+def short_name(name, amount=0):
+    """'פופקו בטעם חמאה ודבש80גר' -> 'פופקו בטעם חמאה ודבש' (size is a separate column)."""
+    out = re.sub(r"^\s*מבצע\s*\*?", "", name)
+    out = " ".join(SIZE_RE.sub(" ", out).split()).strip(" -,*")
+    if amount and re.search(r"\s%g$" % amount, out):
+        out = out.rsplit(" ", 1)[0]
+    return out if len(out) >= 2 else name
 
 
 # ---------- chains ----------
@@ -167,7 +227,7 @@ CHAINS = [
 ]
 
 
-CATALOG = {}          # code -> [name, brand, amount, unit, stores]
+CATALOG = {}          # code -> [name, brand, amount, unit, stores, {chain: {agorot: count}}]
 CATALOG_LOCK = threading.Lock()
 
 
@@ -193,31 +253,39 @@ def base_amount(qty, unit):
     return 0, ""
 
 
-def add_catalog(local):
+def add_catalog(local, chain):
     with CATALOG_LOCK:
         for code, row in local.items():
+            row, price = row[:4], row[4]
             cur = CATALOG.get(code)
             if cur is None:
-                CATALOG[code] = row + [1]
+                cur = CATALOG[code] = row + [1, {}]
             else:
                 cur[4] += 1
+                if len(row[0]) > len(cur[0]):
+                    cur[0] = row[0]
                 if not cur[1] and row[1]:
                     cur[1] = row[1]
                 if not cur[3] and row[3]:
                     cur[2], cur[3] = row[2], row[3]
+            if price:
+                h = cur[5].setdefault(chain, {})
+                h[price] = h.get(price, 0) + 1
 
 
 def write_catalog(path="catalog.tsv.gz"):
     clean = lambda v: str(v).replace("\t", " ").replace("\n", " ").strip()
     rows = sorted(CATALOG.items(), key=lambda kv: -kv[1][4])
     with gzip.open(path, "wt", encoding="utf-8") as f:
-        for code, (name, brand, amount, unit, n) in rows:
+        for code, (name, brand, amount, unit, n, hist) in rows:
             amt = ("%g" % amount) if unit else ""
-            f.write(f"{code}\t{clean(name)}\t{clean(brand)}\t{amt}\t{unit}\t{n}\n")
+            # Most common shelf price per chain (not the min, which is often a one-store sale).
+            pr = ",".join(f"{ch}:{max(h.items(), key=lambda kv: (kv[1], -kv[0]))[0]}" for ch, h in sorted(hist.items()))
+            f.write(f"{code}\t{clean(short_name(name, amount if unit else 0))}\t{clean(brand)}\t{amt}\t{unit}\t{n}\t{pr}\n")
     print(f"catalog: {len(rows)} items -> {path}", flush=True)
 
 
-def parse_prices(blob, watched):
+def parse_prices(blob, watched, chain=""):
     """-> (storeId, {barcode: (agorot, name)}); also feeds CATALOG."""
     store, found, local = None, {}, {}
     for _, el in ET.iterparse(io.BytesIO(maybe_gunzip(blob)), events=("end",)):
@@ -231,26 +299,30 @@ def parse_prices(blob, watched):
                 nm = text(el, "ItemName") or text(el, "ItemNm")
                 if nm:
                     amount, unit = base_amount(text(el, "Quantity"), text(el, "UnitQty"))
-                    local[code] = [nm, text(el, "ManufacturerName"), amount, unit]
+                    try:
+                        pr = round(float(text(el, "ItemPrice")) * 100)
+                    except ValueError:
+                        pr = 0
+                    local[code] = [nm, text(el, "ManufacturerName"), amount, unit, pr if 0 < pr < 1_000_000 else 0]
             if code in watched and not weighted:
                 try:
                     found[code] = (round(float(text(el, "ItemPrice")) * 100), text(el, "ItemName"))
                 except ValueError:
                     pass
             el.clear()
-    add_catalog(local)
+    add_catalog(local, chain)
     return store, found
 
 
 def fetch_chain(chain, watched):
-    stores = chain.stores()
+    stores = fill_cities(chain.stores())
     files = chain.price_files()
     print(f"[{chain.key}] {len(stores)} stores, {len(files)} price files", flush=True)
     prices, names = {}, {}
 
     def one(u):
         try:
-            return parse_prices((chain.get if hasattr(chain, "get") else get)(u, timeout=120), watched)
+            return parse_prices((chain.get if hasattr(chain, "get") else get)(u, timeout=120), watched, chain.key)
         except Exception as e:
             print(f"[{chain.key}] skip {u[:90]}: {e}", flush=True)
             return None, {}

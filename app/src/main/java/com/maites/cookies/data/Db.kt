@@ -159,7 +159,15 @@ private val M8_9 = object : Migration(8, 9) {
     override fun migrate(db: SupportSQLiteDatabase) = Cats.seed(db)
 }
 
-@Database(entities = [CategoryEntity::class, ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class, ShopEntry::class, ShopCheck::class], version = 9, exportSchema = false)
+/** Catalog gets per-chain prices; emptied so the new file is downloaded on next use. */
+private val M9_10 = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE catalog ADD COLUMN prices TEXT NOT NULL DEFAULT ''")
+        db.execSQL("DELETE FROM catalog")
+    }
+}
+
+@Database(entities = [CategoryEntity::class, ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class, ShopEntry::class, ShopCheck::class], version = 10, exportSchema = false)
 @androidx.room.TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun products(): ProductDao
@@ -171,7 +179,7 @@ abstract class AppDb : RoomDatabase() {
     abstract fun categories(): CategoryDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8, M8_9)
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8, M8_9, M9_10)
             .addCallback(object : Callback() { override fun onCreate(db: SupportSQLiteDatabase) = Cats.seed(db) })
             .build()
     }

@@ -145,7 +145,9 @@ fun ProductEditor(
             if (brand.isBlank()) brand = item.brand
             val u = item.baseUnit
             if (pack == null && u != null && item.amount > 0) { pack = item.amount; unit = u }
-            toast("חובר: ${item.name}")
+            val best = item.cheapest
+            if (price == null && best != null) price = best.second
+            toast("חובר: ${item.name}" + (best?.let { " · ${formatShekel(it.second)} ב${it.first.label}" } ?: ""))
             if (image == null) OpenFoodFacts.lookup(item.code)?.imageUrl?.let { if (image == null && code == item.code) image = it }
         }
     }
@@ -301,5 +303,6 @@ private fun SuggestionRow(i: CatalogItem, onClick: () -> Unit) {
             val size = i.baseUnit?.takeIf { i.amount > 0 }?.let { formatPack(i.amount, it) }
             Text(listOfNotNull(i.brand.ifBlank { null }, size).joinToString(" · ").ifBlank { "${i.stores} סניפים" }, style = TextStyles.label, color = c.inkDim, maxLines = 1)
         }
+        CatalogPrice(i)
     }
 }
