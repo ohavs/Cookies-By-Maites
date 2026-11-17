@@ -76,14 +76,15 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                 RoundButton("→", onBack)
                 Spacer(Modifier.weight(1f))
                 RoundButton(if (prod.favorite) "❤️" else "🤍", {
+                    if (!editable(toast)) return@RoundButton
                     scope.launch { dao.setFavorite(prod.id, !prod.favorite) }
                     toast(if (prod.favorite) "הוסר מהמועדפים" else "נשמר במועדפים")
                 }, Modifier.graphicsLayer { val s = 1f + 0.12f * favPop * (1f - favPop) * 4f; scaleX = s; scaleY = s })
-                RoundButton("🛒", {
+                if (com.maites.cookies.data.Workspace.canEdit) RoundButton("🛒", {
                 app.applicationScope.launch { app.db.shop().addProduct(prod.id) }
                 toast("${prod.name} נוסף לקניות")
             })
-                RoundButton("✏️", onEdit)
+                if (com.maites.cookies.data.Workspace.canEdit) RoundButton("✏️", onEdit)
             }
             ProductImage(prod, Modifier.padding(horizontal = Space.gutter).fillMaxWidth().height(240.dp), corner = 28.dp, iconSize = 120.dp)
 
@@ -100,7 +101,7 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                 Spacer(Modifier.height(Space.xl))
                 SectionLabel("המחיר שלי")
                 CCard(padding = androidx.compose.foundation.layout.PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
-                    Row(Modifier.fillMaxWidth().pressable({ keypad = true }).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().pressable({ if (editable(toast)) keypad = true }).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(c.tButter), contentAlignment = Alignment.Center) { Text("🏷️", style = TextStyles.heading) }
                         Spacer(Modifier.size(Space.m))
                         Column(Modifier.weight(1f)) {
@@ -112,7 +113,7 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                         }
                         Text(prod.priceAgorot?.let { formatShekel(it) } ?: "—", style = TextStyles.title, color = c.ink)
                     }
-                    if (prod.priceAgorot != null) {
+                    if (prod.priceAgorot != null && com.maites.cookies.data.Workspace.canEdit) {
                         Box(Modifier.fillMaxWidth().height(1.dp).background(c.divider))
                         Row(Modifier.fillMaxWidth().pressable({
                             scope.launch { dao.setPrice(prod.id, null) }; toast("המחיר הידני נמחק")
@@ -123,10 +124,10 @@ fun ProductPage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Uni
                 }
 
                 Spacer(Modifier.height(Space.xl))
-                ChainPricesSection(app, prod, onPickCity, onLink = { catalogOpen = true })
+                ChainPricesSection(app, prod, onPickCity, onLink = { if (editable(toast)) catalogOpen = true })
 
                 Spacer(Modifier.height(Space.xl))
-                GhostButton("מחיקת המוצר", { confirmDelete = true }, Modifier.fillMaxWidth())
+                if (com.maites.cookies.data.Workspace.canEdit) GhostButton("מחיקת המוצר", { confirmDelete = true }, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Space.xl))
             }
         }

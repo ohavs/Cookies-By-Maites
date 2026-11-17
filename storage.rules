@@ -1,10 +1,17 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Recipe photos + product images: each user reads/writes only their own folder; webp, max 5MB.
+    function myEmail() {
+      return request.auth.token.email_verified == true ? request.auth.token.email.lower() : '';
+    }
+    function invite() { return /databases/(default)/documents/invites/$(myEmail()); }
+    function member(uid) { return myEmail() != '' && firestore.exists(invite()) && firestore.get(invite()).data.owner == uid; }
+    function editor(uid) { return member(uid) && firestore.get(invite()).data.role == 'edit'; }
+
+    // Recipe photos + product images of an account: the owner and invited members read, editors write; webp, max 5MB.
     match /users/{uid}/photos/{file} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null && request.auth.uid == uid
+      allow read: if request.auth != null && (request.auth.uid == uid || member(uid));
+      allow write: if request.auth != null && (request.auth.uid == uid || editor(uid))
         && (request.resource == null || (request.resource.size < 5 * 1024 * 1024 && request.resource.contentType == 'image/webp'));
     }
     // Product pack images, written only by the daily Action.

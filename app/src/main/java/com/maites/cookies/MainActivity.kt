@@ -33,6 +33,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        (application as CookiesApp).cloud.syncSoon()
+        (application as CookiesApp).cloud.apply { foreground = true; syncSoon() }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        (application as CookiesApp).cloud.foreground = false
     }
 }

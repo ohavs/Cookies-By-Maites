@@ -33,12 +33,12 @@ import java.net.URLEncoder
 /** Shown to the user as-is (Hebrew). */
 class CloudError(message: String) : Exception(message)
 
-private class Res(val code: Int, val body: String) {
+internal class Res(val code: Int, val body: String) {
     val ok get() = code in 200..299
     fun json() = JSONObject(body)
 }
 
-private fun http(method: String, url: String, body: ByteArray? = null, type: String = "application/json", auth: String? = null): Res {
+internal fun http(method: String, url: String, body: ByteArray? = null, type: String = "application/json", auth: String? = null): Res {
     val c = (URL(url).openConnection() as HttpURLConnection).apply {
         connectTimeout = 10000; readTimeout = 30000
         requestMethod = method
@@ -144,12 +144,25 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
 
     val state = MutableStateFlow<SyncState>(SyncState.Idle)
 
+    /** True while the app is on screen: a shared account is polled for the others' changes. */
+    @Volatile var foreground = false
+
     /** Push local edits a moment after they happen. */
     @OptIn(FlowPreview::class)
     fun start() {
         scope.launch {
             combine(prefs.account, db.sync().pending()) { a, n -> a != null && n > 0 }
                 .debounce(2500).filter { it }.collect { sync() }
+        }
+        scope.launch {
+            combine(prefs.account, db.shop().entries(), db.shop().checks()) { a, _, _ -> a != null }
+                .debounce(2500).filter { it }.collect { if (shopLocal() != prefs.str(Workspace.key("shop_synced"))) sync() }
+        }
+        scope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(45_000)
+                if (foreground && prefs.account.first() != null) sync()
+            }
         }
     }
 
@@ -164,22 +177,87 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
 
     suspend fun sync() = lock.withLock {
         if (!auth.configured) return@withLock
-        val uid = prefs.account.first()?.uid ?: return@withLock
+        val me = prefs.account.first() ?: return@withLock
+        val uid = Workspace.joined?.owner ?: me.uid
         state.value = SyncState.Running
         state.value = runCatching {
             withContext(Dispatchers.IO) {
                 val t = auth.token() ?: return@withContext
+                Workspace.joined?.let { checkInvite(it, me, t) }
+                val edit = Workspace.canEdit
+                if (!edit) db.sync().forgetLocalEdits()
                 pullCategories(uid, t)
                 pullProducts(uid, t)
                 pullRecipes(uid, t)
-                ProductPhotos.localizeAll(ctx, db.products())
+                if (edit) ProductPhotos.localizeAll(ctx, db.products())
                 fetchMissingPhotos(uid, t)
-                push(uid, t)
-                collectPhotos(uid, t)
+                if (edit) push(uid, t)
+                syncShop(uid, t, edit)
+                if (edit) collectPhotos(uid, t)
             }
             prefs.setLastCloudSync(System.currentTimeMillis())
             SyncState.Idle
         }.getOrElse { SyncState.Failed((it as? CloudError)?.message ?: "הסנכרון נכשל (${it.javaClass.simpleName})") }
+    }
+
+    /** The owner may have changed our role or removed us. */
+    private fun checkInvite(j: Joined, me: Account, t: String) {
+        val r = http("GET", "$api/invites/" + enc(me.email.lowercase()), auth = "Bearer $t")
+        if (r.code == 404 || r.code == 403) throw CloudError("הגישה לחשבון של ${j.ownerName.ifBlank { j.ownerEmail }} הוסרה")
+        if (!r.ok) throw CloudError("קריאה מהענן נכשלה (${r.code})")
+        val f = r.json().optJSONObject("fields") ?: JSONObject()
+        if (f.str("owner") != j.owner) throw CloudError("הגישה לחשבון של ${j.ownerName.ifBlank { j.ownerEmail }} הוסרה")
+        Workspace.setRole(ctx, f.str("role").ifBlank { "view" })
+    }
+
+    // ---------- shopping list (one document, last writer wins) ----------
+
+    /** The local list as canonical JSON, by cloud ids. */
+    private suspend fun shopLocal(): String {
+        val e = JSONArray()
+        db.shop().entriesOnce().forEach { x ->
+            val r = x.recipeId?.let { db.recipes().gidOf(it) }
+            val p = x.productId?.let { db.products().once(it)?.gid }
+            if (r == null && p == null) return@forEach
+            e.put(JSONObject().put("r", r.orEmpty()).put("p", p.orEmpty()).put("q", x.qty).put("at", x.addedAt))
+        }
+        val c = db.shop().checksOnce().mapNotNull { k ->
+            if (k.startsWith("p")) k.drop(1).toLongOrNull()?.let { db.products().once(it)?.gid }?.let { "p$it" } else k
+        }.sorted()
+        return JSONObject().put("e", e).put("c", JSONArray(c)).toString()
+    }
+
+    private suspend fun applyShop(remote: String) {
+        val j = JSONObject(remote)
+        val ea = j.optJSONArray("e") ?: JSONArray()
+        val entries = (0 until ea.length()).mapNotNull { i ->
+            val o = ea.getJSONObject(i)
+            val r = o.optString("r").takeIf { it.isNotBlank() }?.let { db.recipes().byGid(it)?.id }
+            val p = o.optString("p").takeIf { it.isNotBlank() }?.let { db.products().byGid(it)?.id }
+            if (r == null && p == null) null else ShopEntry(recipeId = r, productId = p, qty = o.optDouble("q", 1.0), addedAt = o.optLong("at"))
+        }
+        val ca = j.optJSONArray("c") ?: JSONArray()
+        val checks = (0 until ca.length()).mapNotNull { i ->
+            val k = ca.getString(i)
+            if (k.startsWith("p")) db.products().byGid(k.drop(1))?.id?.let { "p$it" } else k
+        }
+        db.shop().replace(entries, checks)
+    }
+
+    private suspend fun syncShop(uid: String, t: String, edit: Boolean) {
+        val r = http("GET", "$api/users/$uid/shop/list", auth = "Bearer $t")
+        if (!r.ok && r.code != 404) throw CloudError("קריאה מהענן נכשלה (${r.code})")
+        val remote = if (r.ok) r.json().optJSONObject("fields")?.str("data")?.ifBlank { null } else null
+        val kSynced = Workspace.key("shop_synced"); val kSeen = Workspace.key("shop_remote")
+        val local = shopLocal()
+        val localChanged = local != prefs.str(kSynced)
+        if (remote != null && (if (edit) remote != prefs.str(kSeen) && (!localChanged || prefs.str(kSeen).isEmpty()) else remote != prefs.str(kSeen) || localChanged)) {
+            applyShop(remote)
+            prefs.setStr(kSynced, shopLocal()); prefs.setStr(kSeen, remote)
+        } else if (edit && localChanged) {
+            commit(t, listOf(doc(uid, "shop", "list", fields("data" to local, "updatedAt" to System.currentTimeMillis()))))
+            prefs.setStr(kSynced, local); prefs.setStr(kSeen, local)
+        }
     }
 
     // ---------- pull ----------
@@ -371,14 +449,14 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
 
     private fun path(uid: String, name: String) = "users/$uid/photos/$name"
     private fun objectUrl(uid: String, name: String) = "https://firebasestorage.googleapis.com/v0/b/$bucket/o/" + enc(path(uid, name))
-    private fun enc(s: String) = URLEncoder.encode(s, "UTF-8").replace("+", "%20")
+    internal fun enc(s: String) = URLEncoder.encode(s, "UTF-8").replace("+", "%20")
 
     private companion object { const val PAGE = 300 }
 }
 
 // ---------- Firestore value encoding ----------
 
-private fun value(v: Any?): JSONObject = when (v) {
+internal fun value(v: Any?): JSONObject = when (v) {
     null -> JSONObject().put("nullValue", JSONObject.NULL)
     is String -> JSONObject().put("stringValue", v)
     is Boolean -> JSONObject().put("booleanValue", v)
@@ -389,10 +467,10 @@ private fun value(v: Any?): JSONObject = when (v) {
     else -> error("unsupported ${v.javaClass}")
 }
 
-private fun fields(vararg kv: Pair<String, Any?>) = JSONObject().apply { kv.forEach { (k, v) -> put(k, value(v)) } }
+internal fun fields(vararg kv: Pair<String, Any?>) = JSONObject().apply { kv.forEach { (k, v) -> put(k, value(v)) } }
 
-private fun JSONObject.str(k: String) = optJSONObject(k)?.optString("stringValue").orEmpty()
-private fun JSONObject.bool(k: String) = optJSONObject(k)?.optBoolean("booleanValue") ?: false
+internal fun JSONObject.str(k: String) = optJSONObject(k)?.optString("stringValue").orEmpty()
+internal fun JSONObject.bool(k: String) = optJSONObject(k)?.optBoolean("booleanValue") ?: false
 private fun JSONObject.long(k: String) = optJSONObject(k)?.optString("integerValue")?.toLongOrNull() ?: 0L
 private fun JSONObject.num(k: String): Double = optJSONObject(k)?.let { o ->
     if (o.has("doubleValue")) o.optDouble("doubleValue") else o.optString("integerValue").toDoubleOrNull()

@@ -122,7 +122,7 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
                 CCard(Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
                     cost.extras.forEachIndexed { i, (e, v) ->
                         if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.divider))
-                        Row(Modifier.fillMaxWidth().pressable({ extraEdit = i }).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().pressable({ if (editable(toast)) extraEdit = i }).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(e.name, style = TextStyles.heading, color = c.ink)
                                 Text(extraValue(e), style = TextStyles.label, color = c.inkDim)
@@ -131,7 +131,7 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
                         }
                     }
                     if (extras.isNotEmpty()) Box(Modifier.fillMaxWidth().height(1.dp).background(c.divider))
-                    Row(Modifier.fillMaxWidth().pressable({ extraEdit = -1 }).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().pressable({ if (editable(toast)) extraEdit = -1 }).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(c.accent), contentAlignment = Alignment.Center) {
                             Text("+", style = TextStyles.title, color = c.accentFg)
                         }
@@ -148,7 +148,7 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
                 Segmented(listOf(false, true), mode, { if (it) "לפי מרווח רצוי" else "לפי מחיר" }, { byMargin = it }, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Space.m))
                 if (!mode) {
-                    ValueBox(if (r.salePrice > 0) "${formatShekel(r.salePrice)} $per" else "כמה זה עולה $per?", r.salePrice == 0L) { salePad = true }
+                    ValueBox(if (r.salePrice > 0) "${formatShekel(r.salePrice)} $per" else "כמה זה עולה $per?", r.salePrice == 0L) { if (editable(toast)) salePad = true }
                     if (r.salePrice > 0) {
                         Spacer(Modifier.height(Space.m))
                         val profit = cost.profit(r.salePrice)
@@ -164,7 +164,7 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
                         GhostButton("בלי מחיר מכירה", { save(sale = 0) }, Modifier.fillMaxWidth())
                     }
                 } else {
-                    ValueBox(if (r.targetMargin > 0) "מרווח ${r.targetMargin}%" else "כמה אחוז רווח?", r.targetMargin == 0) { marginPad = true }
+                    ValueBox(if (r.targetMargin > 0) "מרווח ${r.targetMargin}%" else "כמה אחוז רווח?", r.targetMargin == 0) { if (editable(toast)) marginPad = true }
                     cost.priceFor(r.targetMargin)?.let { price ->
                         Spacer(Modifier.height(Space.m))
                         CCard(Modifier.fillMaxWidth()) {

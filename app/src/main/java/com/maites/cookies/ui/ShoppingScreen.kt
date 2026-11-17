@@ -111,8 +111,10 @@ fun ShoppingScreen(app: CookiesApp, onAdd: () -> Unit, onClear: () -> Unit, onPi
                     list.forEachIndexed { idx, e ->
                         if (idx > 0) Divider()
                         EntryRow(app, e, recipeMap, productMap, onRecipe, onProduct) { qty ->
-                            scope.launch { if (qty <= 0) shop.remove(e.id) else shop.setQty(e.id, qty) }
-                            if (qty <= 0) toast("הוסר מהרשימה")
+                            if (editable(toast)) {
+                                scope.launch { if (qty <= 0) shop.remove(e.id) else shop.setQty(e.id, qty) }
+                                if (qty <= 0) toast("הוסר מהרשימה")
+                            }
                         }
                     }
                 }
@@ -129,7 +131,7 @@ fun ShoppingScreen(app: CookiesApp, onAdd: () -> Unit, onClear: () -> Unit, onPi
                             Column(Modifier.flip(l.key, placed)) {
                                 if (n > 0) Divider()
                                 val on = l.key in checked
-                                LineRow(l, costs[i], byPacks, on) { scope.launch { if (on) shop.uncheck(l.key) else shop.check(ShopCheck(l.key)) } }
+                                LineRow(l, costs[i], byPacks, on) { if (editable(toast)) scope.launch { if (on) shop.uncheck(l.key) else shop.check(ShopCheck(l.key)) } }
                             }
                         }
                     }

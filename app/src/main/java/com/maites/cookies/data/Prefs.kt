@@ -34,20 +34,20 @@ class Prefs(private val ctx: Context) {
     }
 
     private val kCity = stringPreferencesKey("city")
-    private val kSync = longPreferencesKey("price_sync")
+    private val kSync = longPreferencesKey(Workspace.key("price_sync"))
 
     /** Chosen city for chain prices; "" = not chosen yet. */
     val city: Flow<String> = ctx.store.data.map { it[kCity].orEmpty() }
     suspend fun setCity(c: String) = ctx.store.edit { it[kCity] = c }
     suspend fun lastPriceSync(): Long = ctx.store.data.first()[kSync] ?: 0L
     suspend fun setLastPriceSync(t: Long) = ctx.store.edit { it[kSync] = t }
-    private val kCatalog = longPreferencesKey("catalog_sync")
+    private val kCatalog = longPreferencesKey(Workspace.key("catalog_sync"))
     suspend fun lastCatalog(): Long = ctx.store.data.first()[kCatalog] ?: 0L
     suspend fun setLastCatalog(t: Long) = ctx.store.edit { it[kCatalog] = t }
 
-    private val kLocalAt = longPreferencesKey("local_sync")
-    private val kLocalCity = stringPreferencesKey("local_city")
-    private val kLocalStatus = stringPreferencesKey("local_status")
+    private val kLocalAt = longPreferencesKey(Workspace.key("local_sync"))
+    private val kLocalCity = stringPreferencesKey(Workspace.key("local_city"))
+    private val kLocalStatus = stringPreferencesKey(Workspace.key("local_status"))
 
     val localState: Flow<LocalState> = ctx.store.data.map { LocalState(it[kLocalAt] ?: 0L, it[kLocalCity].orEmpty(), it[kLocalStatus].orEmpty()) }
     suspend fun localState(): LocalState = localState.first()
@@ -66,8 +66,8 @@ class Prefs(private val ctx: Context) {
     private val kName = stringPreferencesKey("acc_name")
     private val kPhoto = stringPreferencesKey("acc_photo")
     private val kRefresh = stringPreferencesKey("acc_refresh")
-    private val kCloudAt = longPreferencesKey("cloud_sync")
-    private val kUploaded = stringSetPreferencesKey("cloud_photos")
+    private val kCloudAt = longPreferencesKey(Workspace.key("cloud_sync"))
+    private val kUploaded = stringSetPreferencesKey(Workspace.key("cloud_photos"))
 
     val account: Flow<Account?> = ctx.store.data.map { p ->
         p[kUid]?.takeIf { it.isNotBlank() }?.let { Account(it, p[kEmail].orEmpty(), p[kName].orEmpty(), p[kPhoto].orEmpty(), p[kRefresh].orEmpty()) }
@@ -79,8 +79,8 @@ class Prefs(private val ctx: Context) {
     suspend fun setRefreshToken(t: String) = ctx.store.edit { it[kRefresh] = t }
 
     /** Highest server sync time seen per cloud collection (RFC 3339). */
-    suspend fun watermark(kind: String): String = ctx.store.data.first()[stringPreferencesKey("wm_$kind")] ?: "1970-01-01T00:00:00Z"
-    suspend fun setWatermark(kind: String, t: String) = ctx.store.edit { it[stringPreferencesKey("wm_$kind")] = t }
+    suspend fun watermark(kind: String): String = ctx.store.data.first()[stringPreferencesKey(Workspace.key("wm_$kind"))] ?: "1970-01-01T00:00:00Z"
+    suspend fun setWatermark(kind: String, t: String) = ctx.store.edit { it[stringPreferencesKey(Workspace.key("wm_$kind"))] = t }
 
     val lastCloudSync: Flow<Long> = ctx.store.data.map { it[kCloudAt] ?: 0L }
     suspend fun setLastCloudSync(t: Long) = ctx.store.edit { it[kCloudAt] = t }
@@ -90,9 +90,12 @@ class Prefs(private val ctx: Context) {
     suspend fun addUploaded(name: String) = ctx.store.edit { it[kUploaded] = (it[kUploaded] ?: emptySet()) + name }
     suspend fun removeUploaded(name: String) = ctx.store.edit { it[kUploaded] = (it[kUploaded] ?: emptySet()) - name }
 
+    suspend fun str(k: String): String = ctx.store.data.first()[stringPreferencesKey(k)].orEmpty()
+    suspend fun setStr(k: String, v: String) = ctx.store.edit { it[stringPreferencesKey(k)] = v }
+
     /** Forget all cloud progress (new sign-in): everything is merged again from scratch. */
     suspend fun resetCloud() = ctx.store.edit { p ->
-        p.asMap().keys.filter { it.name.startsWith("wm_") }.forEach { p -= it }
-        p.remove(kUploaded); p.remove(kCloudAt)
+        p.asMap().keys.filter { it.name.startsWith(Workspace.key("wm_")) }.forEach { p -= it }
+        p.remove(kUploaded); p.remove(kCloudAt); p.remove(stringPreferencesKey(Workspace.key("shop_synced"))); p.remove(stringPreferencesKey(Workspace.key("shop_remote")))
     }
 }

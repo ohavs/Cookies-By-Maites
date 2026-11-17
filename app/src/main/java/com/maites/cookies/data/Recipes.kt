@@ -169,7 +169,7 @@ interface RecipeDao {
 
 /** Recipe photos live in app storage, downscaled to ≤1600px webp. */
 object RecipePhotos {
-    private fun dir(ctx: Context) = File(ctx.filesDir, "recipes").apply { mkdirs() }
+    private fun dir(ctx: Context) = File(Workspace.files(ctx), "recipes").apply { mkdirs() }
 
     suspend fun import(ctx: Context, uri: Uri): String? = withContext(Dispatchers.IO) {
         runCatching {
@@ -209,7 +209,7 @@ object RecipePhotos {
  * so they sync to Storage instead of pointing at Open Food Facts.
  */
 object ProductPhotos {
-    private fun dir(ctx: Context) = File(ctx.filesDir, "products").apply { mkdirs() }
+    private fun dir(ctx: Context) = File(Workspace.files(ctx), "products").apply { mkdirs() }
 
     fun file(ctx: Context, name: String) = File(dir(ctx), name)
     fun isLocal(path: String?) = path != null && path.startsWith("/")

@@ -96,6 +96,8 @@ fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onP
             Column {
                 SectionLabel("גיבוי וסנכרון")
                 AccountCard(app, toast)
+                Spacer(Modifier.height(Space.m))
+                ShareCard(app, toast)
             }
             Column {
                 SectionLabel("מחירים")
@@ -297,13 +299,16 @@ private fun AccountCard(app: CookiesApp, toast: (String) -> Unit) {
 
     com.maites.cookies.design.CSheet(confirmOut, { confirmOut = false }) {
         Text("להתנתק מהחשבון?", style = TextStyles.title, color = c.ink)
-        Text("הכל נשאר בטלפון ובענן. שינויים מעכשיו לא יגובו עד שתתחברי שוב.", style = TextStyles.body, color = c.inkDim)
+        Text(if (com.maites.cookies.data.Workspace.joined != null) "תחזרי לנתונים שלך בטלפון. החשבון המשותף נשאר בענן." else "הכל נשאר בטלפון ובענן. שינויים מעכשיו לא יגובו עד שתתחברי שוב.", style = TextStyles.body, color = c.inkDim)
         Spacer(Modifier.height(Space.xl))
         Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             GhostButton("ביטול", { confirmOut = false }, Modifier.weight(1f))
             StickerButton("התנתקות", {
                 confirmOut = false
-                scope.launch { app.auth.signOut(ctx); toast("התנתקת") }
+                scope.launch {
+                    app.auth.signOut(ctx); toast("התנתקת")
+                    if (com.maites.cookies.data.Workspace.joined != null) (ctx as? android.app.Activity)?.let { com.maites.cookies.data.Workspace.switch(it, null) }
+                }
             }, Modifier.weight(1f))
         }
     }

@@ -12,14 +12,17 @@ class CookiesApp : Application() {
     val priceSync by lazy { PriceSync(db, prefs, com.maites.cookies.data.LocalChains(this)) }
     val catalog by lazy { com.maites.cookies.data.CatalogSync(db, prefs) }
     val auth by lazy { com.maites.cookies.data.CloudAuth(prefs) }
+    val sharing by lazy { com.maites.cookies.data.Sharing(auth, prefs) }
     val cloud by lazy { com.maites.cookies.data.CloudSync(this, db, prefs, auth, applicationScope) }
     /** Outlives screens — for fire-and-forget network calls. */
     val applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
 
     override fun onCreate() {
         super.onCreate()
+        if (runCatching { java.io.File("/proc/self/cmdline").readText().trimEnd('\u0000').endsWith(":restart") }.getOrDefault(false)) return
+        com.maites.cookies.data.Workspace.init(this)
         applicationScope.launch { db.categories().all().collect { com.maites.cookies.data.Cats.all = it } }
         cloud.start()
-        applicationScope.launch { com.maites.cookies.data.ProductPhotos.localizeAll(this@CookiesApp, db.products()) }
+        if (com.maites.cookies.data.Workspace.canEdit) applicationScope.launch { com.maites.cookies.data.ProductPhotos.localizeAll(this@CookiesApp, db.products()) }
     }
 }

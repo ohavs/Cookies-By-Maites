@@ -83,7 +83,7 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
                     toast(if (r.favorite) "הוסר מהמועדפים" else "נשמר במועדפים")
                 })
                 RoundButton("📄", { pdf = true })
-                RoundButton("✏️", onEdit)
+                if (com.maites.cookies.data.Workspace.canEdit) RoundButton("✏️", onEdit)
             }
             Gallery(r.photoList, r.category)
 
@@ -116,7 +116,7 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
                     SectionLabel("תמחיר")
                     CostSummary(r, Costing.of(cost.sum, r.extraList, r.yieldCount, mult), cost.missing, onCosting)
                     Spacer(Modifier.height(Space.m))
-                    StickerButton("🛒 לרשימת הקניות", {
+                    if (com.maites.cookies.data.Workspace.canEdit) StickerButton("🛒 לרשימת הקניות", {
                         app.applicationScope.launch { app.db.shop().addRecipe(r.id, mult) }
                         toast("${r.name} נוסף לקניות")
                     }, Modifier.fillMaxWidth())
@@ -129,7 +129,7 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
                 }
 
                 Spacer(Modifier.height(Space.xl))
-                GhostButton("מחיקת המתכון", { confirmDelete = true }, Modifier.fillMaxWidth())
+                if (com.maites.cookies.data.Workspace.canEdit) GhostButton("מחיקת המתכון", { confirmDelete = true }, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(Space.xl))
             }
         }

@@ -52,6 +52,12 @@ interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun tomb(t: Tombstone)
     @Query("DELETE FROM tombstones WHERE gid = :gid") suspend fun untomb(gid: String)
     @Query("DELETE FROM tombstones") suspend fun clearTombstones()
+    /** Viewers of a shared account: the cloud always wins. */
+    @Transaction
+    suspend fun forgetLocalEdits() { cleanProducts(); cleanRecipes(); cleanCategories(); clearTombstones() }
+    @Query("UPDATE products SET dirty = 0") suspend fun cleanProducts()
+    @Query("UPDATE recipes SET dirty = 0") suspend fun cleanRecipes()
+    @Query("UPDATE categories SET dirty = 0") suspend fun cleanCategories()
     @Query("UPDATE products SET dirty = 1") suspend fun dirtyProducts()
     @Query("UPDATE recipes SET dirty = 1") suspend fun dirtyRecipes()
 }
@@ -179,7 +185,7 @@ abstract class AppDb : RoomDatabase() {
     abstract fun categories(): CategoryDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, "cookies.db").addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8, M8_9, M9_10)
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, Workspace.dbName).addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8, M8_9, M9_10)
             .addCallback(object : Callback() { override fun onCreate(db: SupportSQLiteDatabase) = Cats.seed(db) })
             .build()
     }

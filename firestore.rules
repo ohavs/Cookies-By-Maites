@@ -5,10 +5,38 @@ service cloud.firestore {
     match /prices/{barcode} { allow read: if true; }
     match /stores/{chain}   { allow read: if true; }
 
-    // Each user's own recipes and products (cloud sync).
+    function signedIn() { return request.auth != null; }
+    function myEmail() {
+      return request.auth.token.email_verified == true ? request.auth.token.email.lower() : '';
+    }
+    function invitePath() { return /databases/$(database)/documents/invites/$(myEmail()); }
+    // Someone the owner [uid] invited (by Gmail) into their account.
+    function member(uid) {
+      return signedIn() && myEmail() != '' && exists(invitePath()) && get(invitePath()).data.owner == uid;
+    }
+    function editor(uid) { return member(uid) && get(invitePath()).data.role == 'edit'; }
+
+    // Each account's recipes, products, categories and shopping list (cloud sync).
+    // The owner and invited editors read+write; invited viewers read.
     match /users/{uid}/{kind}/{gid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid
-        && kind in ['products', 'recipes', 'categories'];
+      allow read: if kind in ['products', 'recipes', 'categories', 'shop']
+        && signedIn() && (request.auth.uid == uid || member(uid));
+      allow write: if kind in ['products', 'recipes', 'categories', 'shop']
+        && signedIn() && (request.auth.uid == uid || editor(uid));
+    }
+
+    // Invitations to share an account, keyed by the invitee's Gmail (lowercase).
+    match /invites/{email} {
+      allow read: if signedIn() && (resource.data.owner == request.auth.uid || email == myEmail());
+      allow create: if signedIn() && email != myEmail()
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.role in ['view', 'edit']
+        && request.resource.data.keys().hasOnly(['owner', 'ownerName', 'ownerEmail', 'role', 'at']);
+      allow update: if signedIn() && (
+        (resource.data.owner == request.auth.uid && request.resource.data.owner == request.auth.uid
+          && request.resource.data.role in ['view', 'edit'])
+        || (email == myEmail() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joined', 'name'])));
+      allow delete: if signedIn() && (resource.data.owner == request.auth.uid || email == myEmail());
     }
 
     // Barcodes the app wants prices for. Anyone may add one; nobody reads it from a client.

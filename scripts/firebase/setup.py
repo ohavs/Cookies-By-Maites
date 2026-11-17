@@ -107,9 +107,29 @@ def google_client():
         print(f"::warning::Google sign-in provider is not enabled in Firebase Auth ({code} {json.dumps(d)[:200]})")
 
 
-for api in ["identitytoolkit.googleapis.com", "firebasestorage.googleapis.com", "storage.googleapis.com"]:
+def storage_reads_firestore():
+    """storage.rules checks shared-account invites in Firestore; Storage's service agent needs a role for that."""
+    code, d = req("GET", f"https://cloudresourcemanager.googleapis.com/v1/projects/{PROJECT}")
+    if code != 200:
+        print(f"::warning::project lookup failed ({code} {json.dumps(d)[:200]})"); return
+    member = f"serviceAccount:service-{d['projectNumber']}@gcp-sa-firebasestorage.iam.gserviceaccount.com"
+    role = "roles/firebaserules.firestoreServiceAgent"
+    code, pol = req("POST", f"https://cloudresourcemanager.googleapis.com/v1/projects/{PROJECT}:getIamPolicy", {})
+    if code != 200:
+        print(f"::warning::getIamPolicy failed ({code} {json.dumps(pol)[:200]})"); return
+    b = next((b for b in pol.setdefault("bindings", []) if b["role"] == role), None)
+    if b and member in b["members"]:
+        print("storage→firestore: ok"); return
+    if b: b["members"].append(member)
+    else: pol["bindings"].append({"role": role, "members": [member]})
+    code, d = req("POST", f"https://cloudresourcemanager.googleapis.com/v1/projects/{PROJECT}:setIamPolicy", {"policy": pol})
+    print(f"storage→firestore: granted ({code})" if code == 200 else f"::warning::setIamPolicy failed ({code} {json.dumps(d)[:300]})")
+
+
+for api in ["identitytoolkit.googleapis.com", "firebasestorage.googleapis.com", "storage.googleapis.com", "cloudresourcemanager.googleapis.com"]:
     enable(api)
 if not READ_ONLY:
     shas()
+    storage_reads_firestore()
 bucket()
 google_client()

@@ -103,14 +103,14 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
             label = "tab",
         ) { t ->
             when (t) {
-                Tab.Recipes -> RecipesScreen(app, onAdd = { push(RecipeEditPg()) }, onOpen = { push(RecipePg(it)) })
-                Tab.Products -> ProductsScreen(app, onAdd = { push(EditPg()) }, onOpen = { push(ProductPg(it)) })
-                Tab.Shopping -> ShoppingScreen(app, onAdd = { shopAdd = true }, onClear = { shopClear = true }, onPickCity = { cityOpen = true }, onRecipe = { push(RecipePg(it)) }, onProduct = { push(ProductPg(it)) }, toast = showToast)
-                Tab.Settings -> SettingsScreen(app, prefs, showToast, onPickCity = { cityOpen = true }, onCategories = { push(CategoriesPg) }, onCookbook = { cookbook = true }, onImport = { excel = true })
+                Tab.Recipes -> RecipesScreen(app, onAdd = { if (editable(showToast)) push(RecipeEditPg()) }, onOpen = { push(RecipePg(it)) })
+                Tab.Products -> ProductsScreen(app, onAdd = { if (editable(showToast)) push(EditPg()) }, onOpen = { push(ProductPg(it)) })
+                Tab.Shopping -> ShoppingScreen(app, onAdd = { if (editable(showToast)) shopAdd = true }, onClear = { if (editable(showToast)) shopClear = true }, onPickCity = { cityOpen = true }, onRecipe = { push(RecipePg(it)) }, onProduct = { push(ProductPg(it)) }, toast = showToast)
+                Tab.Settings -> SettingsScreen(app, prefs, showToast, onPickCity = { cityOpen = true }, onCategories = { if (editable(showToast)) push(CategoriesPg) }, onCookbook = { cookbook = true }, onImport = { if (editable(showToast)) excel = true })
             }
         }
 
-        BottomBar(tab, onTab = { tab = it }, onAdd = { addOpen = true }, modifier = Modifier.align(Alignment.BottomCenter))
+        BottomBar(tab, onTab = { tab = it }, onAdd = { if (editable(showToast)) addOpen = true }, modifier = Modifier.align(Alignment.BottomCenter))
 
         PageHost(stack, pop) { pg ->
             when (pg) {

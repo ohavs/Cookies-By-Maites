@@ -12,7 +12,7 @@ import kotlin.math.ceil
 
 /**
  * One thing on the shopping list: a recipe ([recipeId], [qty] = batch multiplier)
- * or a product ([productId], [qty] = packs). Local to the device (not synced).
+ * or a product ([productId], [qty] = packs). Synced as one cloud document (`users/{uid}/shop/list`).
  * No foreign keys — recipes/products are rewritten with REPLACE, which would cascade.
  */
 @Entity(tableName = "shop_entries")
@@ -77,6 +77,17 @@ interface ShopDao {
 
     @Transaction
     suspend fun clear() { clearEntries(); clearChecks() }
+
+    @Query("SELECT * FROM shop_entries ORDER BY addedAt, id") suspend fun entriesOnce(): List<ShopEntry>
+    @Query("SELECT `key` FROM shop_checks") suspend fun checksOnce(): List<String>
+    @Insert suspend fun putAll(e: List<ShopEntry>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun checkAll(c: List<ShopCheck>)
+
+    /** Replaces the whole list (from the cloud). */
+    @Transaction
+    suspend fun replace(entries: List<ShopEntry>, checks: List<String>) {
+        clearEntries(); clearChecks(); putAll(entries); checkAll(checks.map(::ShopCheck))
+    }
 }
 
 /**
