@@ -54,7 +54,7 @@ import com.maites.cookies.update.Updater
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onPickCity: () -> Unit, onCategories: () -> Unit) {
+fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onPickCity: () -> Unit, onCategories: () -> Unit, onCookbook: () -> Unit, onImport: () -> Unit) {
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 120.dp)) {
         ScreenTitle("הגדרות")
@@ -83,6 +83,14 @@ fun SettingsScreen(app: CookiesApp, prefs: UiPrefs, toast: (String) -> Unit, onP
                     SettingRow("קטגוריות", "הוספה, שינוי שם, אייקון וצבע", onCategories) {
                         Text("🗂️", style = TextStyles.heading)
                     }
+                }
+            }
+            Column {
+                SectionLabel("ייבוא וייצוא")
+                CCard(padding = androidx.compose.foundation.layout.PaddingValues(horizontal = Space.l, vertical = Space.xs)) {
+                    SettingRow("ספר מתכונים", "PDF לשיתוף או להדפסה", onCookbook) { Text("📖", style = TextStyles.heading) }
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(C.colors.divider))
+                    SettingRow("אקסל", "ייבוא מוצרים ומתכונים, או קובץ לדוגמה", onImport) { Text("📊", style = TextStyles.heading) }
                 }
             }
             Column {

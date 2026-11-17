@@ -70,6 +70,7 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
     val cost = rememberIngredientsCost(app, items, mult)
     val scope = rememberCoroutineScope()
     var confirmDelete by remember { mutableStateOf(false) }
+    var pdf by remember { mutableStateOf(false) }
     val r = recipe ?: return
 
     Box(Modifier.fillMaxSize()) {
@@ -81,6 +82,7 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
                     scope.launch { dao.setFavorite(r.id, !r.favorite) }
                     toast(if (r.favorite) "הוסר מהמועדפים" else "נשמר במועדפים")
                 })
+                RoundButton("📄", { pdf = true })
                 RoundButton("✏️", onEdit)
             }
             Gallery(r.photoList, r.category)
@@ -131,6 +133,8 @@ fun RecipePage(app: CookiesApp, id: Long, onBack: () -> Unit, onEdit: () -> Unit
                 Spacer(Modifier.height(Space.xl))
             }
         }
+
+        RecipePdfSheet(app, pdf, r.id, mult, { pdf = false }, toast)
 
         CSheet(confirmDelete, { confirmDelete = false }) {
             Text("למחוק את ${r.name}?", style = TextStyles.title, color = c.ink)

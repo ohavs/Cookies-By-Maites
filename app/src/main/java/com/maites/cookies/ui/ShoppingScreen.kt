@@ -201,13 +201,9 @@ private fun EntryRow(
 @Composable
 private fun LineRow(l: ShopLine, cost: Long?, byPacks: Boolean, checked: Boolean, onToggle: () -> Unit) {
     val c = C.colors
-    val fill by animateColorAsState(if (checked) c.accent else Color.Transparent, Springs.soft(), label = "chk")
-    val tick by androidx.compose.animation.core.animateFloatAsState(if (checked) 1f else 0f, Springs.pop(), label = "tick")
     val haptics = C.haptics
     Row(Modifier.fillMaxWidth().pressable({ haptics.toggle(!checked); onToggle() }, scale = 0.97f, haptic = false).padding(vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(26.dp).clip(CircleShape).background(fill).border(2.dp, if (checked) c.stroke else c.inkFaint, CircleShape), contentAlignment = Alignment.Center) {
-            Text("✓", style = TextStyles.label, color = c.accentFg, modifier = Modifier.graphicsLayer { scaleX = tick; scaleY = tick; alpha = tick.coerceIn(0f, 1f) })
-        }
+        com.maites.cookies.design.CheckDot(checked)
         Spacer(Modifier.width(Space.m))
         Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(l.product?.let { categoryTint(it.category) } ?: c.surface2), contentAlignment = Alignment.Center) {
             Text(l.icon, style = TextStyles.heading)

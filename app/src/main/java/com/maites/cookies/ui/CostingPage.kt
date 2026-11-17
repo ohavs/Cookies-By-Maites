@@ -70,6 +70,9 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
     var salePad by remember { mutableStateOf(false) }
     var marginPad by remember { mutableStateOf(false) }
     var removeExtra by remember { mutableStateOf<Int?>(null) }
+    var pdfBusy by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
     val r = recipe ?: return
     val extras = r.extraList
     val cost = Costing.of(ingredients.sum, extras, r.yieldCount, 1.0)
@@ -84,10 +87,19 @@ fun CostingPage(app: CookiesApp, id: Long, onBack: () -> Unit, toast: (String) -
             Row(Modifier.fillMaxWidth().padding(horizontal = Space.gutter, vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
                 RoundButton("→", onBack)
                 Spacer(Modifier.width(Space.m))
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text("תמחיר", style = TextStyles.title, color = c.ink)
                     Text(r.name, style = TextStyles.label, color = c.inkDim)
                 }
+                RoundButton(if (pdfBusy) "⏳" else "📄", {
+                    if (!pdfBusy) {
+                        pdfBusy = true
+                        scope.launch {
+                            runCatching { PdfExport.costing(app, r.id) }.onSuccess { PdfExport.share(ctx, it) }.onFailure { toast("לא הצלחנו ליצור את הקובץ") }
+                            pdfBusy = false
+                        }
+                    }
+                })
             }
             Column(Modifier.padding(horizontal = Space.gutter)) {
                 // Summary
