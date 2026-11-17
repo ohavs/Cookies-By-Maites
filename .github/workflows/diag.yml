@@ -1,0 +1,15 @@
+name: Cloud diagnostics
+on:
+  workflow_dispatch:
+  push:
+    branches: ["ccr-*"]
+    paths: ["scripts/firebase/diag.py", ".github/workflows/diag.yml"]
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: python3 scripts/firebase/diag.py
