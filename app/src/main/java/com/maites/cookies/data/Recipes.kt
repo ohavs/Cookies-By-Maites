@@ -111,6 +111,8 @@ data class IngredientEntity(
     val amount: Double,
     val unit: BaseUnit,
     val icon: String,
+    /** [Measure] name; blank = [unit] itself. [amount] is counted in it. */
+    val measure: String = "",
 )
 
 data class RecipeRow(val id: Long, val name: String, val category: String, val yieldCount: Int, val yieldLabel: String, val photos: String, val favorite: Boolean, val count: Int)
@@ -240,6 +242,7 @@ object ProductPhotos {
 
 /** What one ingredient line costs, given its product and the product's price. Null when unknown. */
 fun ingredientCost(i: IngredientEntity, p: ProductEntity?, packPrice: Long?): Long? {
-    if (p == null || packPrice == null || p.packAmount <= 0 || p.unit != i.unit) return null
-    return Math.round(packPrice * i.amount / p.packAmount)
+    if (p == null || packPrice == null || p.packAmount <= 0) return null
+    val q = i.inProduct(p) ?: return null
+    return Math.round(packPrice * q / p.packAmount)
 }

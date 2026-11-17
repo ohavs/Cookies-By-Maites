@@ -34,6 +34,8 @@ data class ProductEntity(
     /** Key of a [CategoryEntity] (kind products). */
     val category: String = "Pantry",
     val imageUrl: String? = null,
+    /** Grams in one 240 ml cup (for cup/spoon recipes). Null = guess from the name. */
+    val gramsPerCup: Double? = null,
     /** Cloud id (stable across devices). */
     val gid: String = java.util.UUID.randomUUID().toString(),
     /** Changed locally since the last cloud push. */
@@ -173,7 +175,15 @@ private val M9_10 = object : Migration(9, 10) {
     }
 }
 
-@Database(entities = [CategoryEntity::class, ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class, ShopEntry::class, ShopCheck::class], version = 10, exportSchema = false)
+/** Kitchen measures on ingredients; grams-per-cup on products. */
+private val M10_11 = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE ingredients ADD COLUMN measure TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE products ADD COLUMN gramsPerCup REAL")
+    }
+}
+
+@Database(entities = [CategoryEntity::class, ProductEntity::class, ChainStore::class, ChainPrice::class, RecipeEntity::class, IngredientEntity::class, CatalogItem::class, Tombstone::class, ShopEntry::class, ShopCheck::class], version = 11, exportSchema = false)
 @androidx.room.TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun products(): ProductDao
@@ -185,7 +195,7 @@ abstract class AppDb : RoomDatabase() {
     abstract fun categories(): CategoryDao
 
     companion object {
-        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, Workspace.dbName).addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8, M8_9, M9_10)
+        fun create(ctx: Context) = Room.databaseBuilder(ctx, AppDb::class.java, Workspace.dbName).addMigrations(M1_2, M2_3, M3_4, M4_5, M5_6, M6_7, M7_8, M8_9, M9_10, M10_11)
             .addCallback(object : Callback() { override fun onCreate(db: SupportSQLiteDatabase) = Cats.seed(db) })
             .build()
     }

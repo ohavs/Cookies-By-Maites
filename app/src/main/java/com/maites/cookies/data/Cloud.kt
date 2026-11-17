@@ -321,6 +321,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
                 priceAgorot = f.optJSONObject("price")?.optString("integerValue")?.toLongOrNull(),
                 favorite = f.bool("favorite"), updatedAt = f.long("updatedAt"), brand = f.str("brand"),
                 category = f.str("category").ifBlank { "Pantry" },
+                gramsPerCup = f.num("gpc").takeIf { it > 0 },
                 imageUrl = f.str("image").takeIf { it.isNotBlank() }?.let { ProductPhotos.file(ctx, it).absolutePath } ?: f.str("imageUrl").ifBlank { null },
             )
             if (local != null && local.copy(dirty = false) == remote) return@changed
@@ -354,7 +355,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
                     recipeId = 0, position = 0,
                     productId = m.str("p").takeIf { it.isNotBlank() }?.let { db.products().byGid(it)?.id },
                     name = m.str("n"), amount = m.num("a"),
-                    unit = runCatching { BaseUnit.valueOf(m.str("u")) }.getOrDefault(BaseUnit.Gram), icon = m.str("i"),
+                    unit = runCatching { BaseUnit.valueOf(m.str("u")) }.getOrDefault(BaseUnit.Gram), icon = m.str("i"), measure = m.str("m"),
                 )
             }
             dao.write(r, items)
@@ -401,7 +402,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
             doc(uid, "products", p.gid, fields(
                 "name" to p.name, "barcode" to p.barcode, "packAmount" to p.packAmount, "unit" to p.unit.name,
                 "price" to p.priceAgorot, "favorite" to p.favorite, "updatedAt" to p.updatedAt, "brand" to p.brand,
-                "category" to p.category,
+                "category" to p.category, "gpc" to p.gramsPerCup,
                 "image" to p.imageUrl?.takeIf(ProductPhotos::isLocal)?.let { File(it).name },
                 "imageUrl" to p.imageUrl?.takeIf { !ProductPhotos.isLocal(it) },
             ))
@@ -417,7 +418,7 @@ class CloudSync(private val ctx: Context, private val db: AppDb, private val pre
         }
         commit(t, recipes.map { r ->
             val items = db.recipes().ingredientsOnce(r.id).map { i ->
-                fields("p" to i.productId?.let { db.products().once(it)?.gid }, "n" to i.name, "a" to i.amount, "u" to i.unit.name, "i" to i.icon)
+                fields("p" to i.productId?.let { db.products().once(it)?.gid }, "n" to i.name, "a" to i.amount, "u" to i.unit.name, "i" to i.icon, "m" to i.measure)
             }
             doc(uid, "recipes", r.gid, fields(
                 "name" to r.name, "category" to r.category, "yieldCount" to r.yieldCount.toLong(), "yieldLabel" to r.yieldLabel,

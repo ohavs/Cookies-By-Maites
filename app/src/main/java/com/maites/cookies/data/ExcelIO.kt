@@ -60,7 +60,7 @@ object ExcelIO {
             iRows = recipes.flatMap { r ->
                 db.recipes().ingredientsOnce(r.id).map { i ->
                     val p = i.productId?.let(byId::get)
-                    listOf(r.name, p?.name ?: i.name, clean(i.amount), unitWord(i.unit), p?.barcode.orEmpty())
+                    listOf(r.name, p?.name ?: i.name, clean(i.amount), i.m.one, p?.barcode.orEmpty())
                 }
             }
         }
@@ -167,17 +167,16 @@ object ExcelIO {
                 val rec = row.at(cRec); val name = row.at(cName)
                 if (rec.isBlank() || name.isBlank()) { skipped += "מרכיבים, שורה ${n + 2}: חסר מתכון או מרכיב"; return@forEachIndexed }
                 val p = byCode(row.at(cCode).filter(Char::isDigit)) ?: byName(name)
-                val u = unit(row.at(cUnit))
-                var amount = (number(row.at(cAmt)) ?: 0.0) * (u?.second ?: 1.0)
-                var base = u?.first ?: p?.unit ?: BaseUnit.Gram
-                // A product measured in grams but listed in ml (or the reverse): keep the product's unit, 1:1.
-                if (p != null && base != p.unit && base != BaseUnit.Unit && p.unit != BaseUnit.Unit) base = p.unit
-                if (p != null && base != p.unit) { skipped += "מרכיבים, שורה ${n + 2}: היחידה של $name לא תואמת למוצר — נשמר בלי קישור" }
-                val link = p?.takeIf { it.unit == base }
+                val m = Measure.parse(row.at(cUnit)) ?: p?.unit?.let(Measure::of) ?: Measure.Gram
+                var amount = number(row.at(cAmt)) ?: 0.0
+                val link = p
+                val base = m.baseFor(link)
+                if (link != null && IngredientEntity(recipeId = 0, position = 0, name = name, amount = 1.0, unit = base, icon = "", measure = m.name).inProduct(link) == null)
+                    skipped += "מרכיבים, שורה ${n + 2}: אין המרה מ${m.one} ל${com.maites.cookies.ui.unitLabel(link.unit)} עבור $name — בלי מחיר"
                 if (amount < 0) amount = 0.0
                 names.putIfAbsent(norm(rec), rec)
                 lines.getOrPut(norm(rec)) { ArrayList() } += IngredientEntity(
-                    recipeId = 0, position = 0, productId = link?.id, name = link?.name ?: name, amount = amount, unit = base,
+                    recipeId = 0, position = 0, productId = link?.id, name = link?.name ?: name, amount = amount, unit = base, measure = m.name,
                     icon = link?.let { Cats.product(it.category).emoji } ?: "🥣",
                 )
             }

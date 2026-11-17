@@ -46,6 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maites.cookies.CookiesApp
 import com.maites.cookies.data.BaseUnit
+import com.maites.cookies.data.Density
+import com.maites.cookies.data.Measure
+import com.maites.cookies.data.baseFor
+import com.maites.cookies.data.inProduct
+import com.maites.cookies.data.m
 import com.maites.cookies.data.IngredientEntity
 import com.maites.cookies.data.ProductEntity
 import com.maites.cookies.data.Cats
@@ -76,6 +81,7 @@ private val ICONS = listOf("🌾", "🧈", "🥚", "🥛", "🍫", "🍬", "🍯
 private const val NEW = -1
 
 /** New / edit recipe. [id] null = new. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long) -> Unit, toast: (String) -> Unit) {
     val c = C.colors
@@ -100,6 +106,7 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
     var chooserFor by remember { mutableStateOf<Int?>(null) }
     var amountFor by remember { mutableStateOf<Int?>(null) }
     var editIdx by remember { mutableStateOf<Int?>(null) }
+    var cupFor by remember { mutableStateOf<ProductEntity?>(null) }
     var importing by remember { mutableStateOf(0) }
     var removePhoto by remember { mutableStateOf<String?>(null) }
     var removeItem by remember { mutableStateOf<Int?>(null) }
@@ -228,7 +235,7 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
                 if (target == NEW) { items.add(line); amountFor = items.lastIndex }
                 else {
                     val old = items[target]
-                    items[target] = line.copy(amount = if (old.unit == line.unit) old.amount else 0.0)
+                    items[target] = line.copy(amount = old.amount, measure = old.m.name, unit = old.m.baseFor(p))
                     if (items[target].amount == 0.0) amountFor = target
                 }
             },
@@ -248,7 +255,7 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
         val amountLine = amountFor?.let { items.getOrNull(it) }
         KeypadSheet(
             open = amountLine != null, title = "כמות", lead = amountLine?.let { byId[it.productId]?.name ?: it.name }.orEmpty(),
-            initial = amountLine?.amount?.takeIf { it > 0 }?.let { Math.round(it * 100) }, prefix = "", suffix = amountLine?.let { unitLabel(it.unit) }.orEmpty(),
+            initial = amountLine?.amount?.takeIf { it > 0 }?.let { Math.round(it * 100) }, prefix = "", suffix = amountLine?.m?.many.orEmpty(),
             onDismiss = {
                 amountFor?.let { i -> if (items.getOrNull(i)?.amount == 0.0) items.removeAt(i) }
                 amountFor = null
@@ -259,6 +266,17 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
             if (i != null && v > 0) items[i] = items[i].copy(amount = v / 100.0) else if (i != null && items[i].amount == 0.0) items.removeAt(i)
         }
 
+        val cupP = cupFor
+        KeypadSheet(
+            open = cupP != null, title = "כמה גרם בכוס?", lead = cupP?.let { "כוס ${it.name} (240 מ״ל) · נשמר במוצר" }.orEmpty(),
+            initial = cupP?.let { Math.round(Density.cup(it)) }, prefix = "", suffix = "גרם", decimals = 0,
+            onDismiss = { cupFor = null },
+        ) { v ->
+            val prod = cupFor
+            cupFor = null
+            if (prod != null && v > 0) scope.launch { app.db.products().put(prod.copy(gramsPerCup = v.toDouble(), dirty = true, updatedAt = System.currentTimeMillis())) }
+        }
+
         val editing = editIdx?.let { items.getOrNull(it) }
         CSheet(editing != null, { editIdx = null }) {
             if (editing == null) return@CSheet
@@ -267,11 +285,41 @@ fun RecipeEditor(app: CookiesApp, id: Long?, onClose: () -> Unit, onSaved: (Long
             Text(p?.name ?: editing.name, style = TextStyles.title, color = c.ink)
             Text(if (p != null) "מקושר למוצר · המחיר נמשך ממנו" else "לא מקושר למוצר — אין מחיר", style = TextStyles.body, color = c.inkDim)
             Spacer(Modifier.height(Space.l))
-            if (p == null) {
-                Segmented(BaseUnit.entries, editing.unit, ::unitLabel, { items[idx] = editing.copy(unit = it) }, Modifier.fillMaxWidth())
-                Spacer(Modifier.height(Space.s))
+            SectionLabel("יחידה")
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
+                Measure.entries.forEach { m ->
+                    CChip(m.one, m == editing.m, {
+                        val amount = if (m.isPinch) 1.0 else if (editing.m.isPinch) 0.0 else editing.amount
+                        items[idx] = editing.copy(measure = m.name, unit = m.baseFor(p), amount = amount)
+                        if (amount == 0.0) { editIdx = null; amountFor = idx }
+                    })
+                }
             }
-            ValueBox(formatPack(editing.amount, editing.unit), false) { editIdx = null; amountFor = idx }
+            Spacer(Modifier.height(Space.m))
+            if (!editing.m.isPinch) ValueBox(formatMeasure(editing.amount, editing.m), false) { editIdx = null; amountFor = idx }
+            if (p != null) {
+                val m = editing.m
+                val crosses = (m.unit == BaseUnit.Milliliter && p.unit == BaseUnit.Gram) || (m.unit == BaseUnit.Gram && p.unit == BaseUnit.Milliliter)
+                when {
+                    crosses -> {
+                        Spacer(Modifier.height(Space.s))
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.surface).pressable({ cupFor = p }).padding(Space.m),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("כוס ${p.name} = ${Math.round(Density.cup(p))} גרם", style = TextStyles.label, color = c.ink)
+                                Text(if (Density.isGuess(p)) "הערכה · לחצי לדיוק" else "נשמר במוצר · לכל המתכונים", style = TextStyles.label, color = c.inkDim)
+                            }
+                            Text("שינוי", style = TextStyles.label, color = c.accentInk)
+                        }
+                    }
+                    editing.inProduct(p) == null -> {
+                        Spacer(Modifier.height(Space.s))
+                        Text("אין המרה מ${m.one} ל${unitLabel(p.unit)} — המרכיב יופיע בלי מחיר", style = TextStyles.label, color = c.inkDim)
+                    }
+                }
+            }
             Spacer(Modifier.height(Space.l))
             SectionLabel("אייקון")
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Space.s)) {

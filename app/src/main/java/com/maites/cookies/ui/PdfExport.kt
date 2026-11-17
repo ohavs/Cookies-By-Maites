@@ -131,7 +131,7 @@ object PdfExport {
             items.forEachIndexed { idx, i ->
                 if (idx > 0) f.divider()
                 val p = i.productId?.let(d.products::get)
-                f.row(p?.name ?: i.name, formatPack(i.amount * mult, i.unit), if (prices) costs[idx]?.let(::formatShekel) ?: "—" else null, 12f, INK)
+                f.row(p?.name ?: i.name, formatIngredient(i.copy(amount = i.amount * mult), p), if (prices) costs[idx]?.let(::formatShekel) ?: "—" else null, 12f, INK)
             }
         }
 

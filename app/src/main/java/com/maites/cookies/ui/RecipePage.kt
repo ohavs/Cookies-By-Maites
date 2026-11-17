@@ -196,7 +196,7 @@ fun IngredientLine(i: IngredientEntity, p: ProductEntity?, cost: Long?, onClick:
         Spacer(Modifier.width(Space.m))
         Column(Modifier.weight(1f)) {
             Text(p?.name ?: i.name, style = TextStyles.heading, color = c.ink)
-            Text(formatPack(i.amount, i.unit) + if (p == null) " · לא מקושר למוצר" else "", style = TextStyles.label, color = c.inkDim)
+            Text(formatIngredient(i, p) + if (p == null) " · לא מקושר למוצר" else "", style = TextStyles.label, color = c.inkDim)
         }
         if (trailing != null) trailing()
         else Text(cost?.let { formatShekel(it) } ?: "—", style = TextStyles.heading, color = if (cost != null) c.ink else c.inkFaint)

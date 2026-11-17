@@ -123,12 +123,14 @@ object Shopping {
             if (e.recipeId != null && e.recipeId in recipes) {
                 for (i in byRecipe[e.recipeId].orEmpty()) {
                     val p = i.productId?.let(products::get)
-                    val amount = i.amount * e.qty
-                    if (amount <= 0) continue
-                    if (p != null && p.unit == i.unit) add("p${p.id}", { ShopLine("p${p.id}", p, p.name, i.icon, p.unit, 0.0) }, amount)
+                    if (i.amount * e.qty <= 0) continue
+                    val q = i.inProduct(p)
+                    if (p != null && q != null) { if (q > 0) add("p${p.id}", { ShopLine("p${p.id}", p, p.name, i.icon, p.unit, 0.0) }, q * e.qty) }
                     else {
                         val name = p?.name ?: i.name.trim()
-                        add("n$name|${i.unit}", { ShopLine("n$name|${i.unit}", null, name, i.icon, i.unit, 0.0) }, amount)
+                        val (amount, unit) = i.ownBase()?.let { (a, u) -> a * e.qty to u } ?: (i.amount * e.qty to BaseUnit.Unit)
+                        if (i.m.isPinch) continue
+                        add("n$name|$unit", { ShopLine("n$name|$unit", null, name, i.icon, unit, 0.0) }, amount)
                     }
                 }
             }
