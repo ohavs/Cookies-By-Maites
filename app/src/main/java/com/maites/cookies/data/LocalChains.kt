@@ -32,12 +32,17 @@ class LocalChains(private val ctx: Context) {
 
     /** Files listing for a chain: (stores file, latest PriceFull per store id). */
     private fun listing(chain: Chain): List<FileRef> = when (chain) {
-        Chain.Victory -> VICTORY_IDS.flatMapIndexed { idx, edi ->
-            val arr = JSONArray(get("$LAIB/webapi/api/getfiles?edi=$edi").decodeToString())
-            (0 until arr.length()).mapNotNull { i ->
-                val n = arr.getJSONObject(i).optString("fileName").ifBlank { null } ?: return@mapNotNull null
-                FileRef(n, "$LAIB/webapi/$edi/$n", if (idx == 0) "" else "${idx + 1}-")
+        // A company id with no branches answers getfiles with HTTP 400 ("FilesRootPath is invalid"): skip it.
+        Chain.Victory -> VICTORY_IDS.mapIndexed { idx, edi ->
+            runCatching {
+                val arr = JSONArray(get("$LAIB/webapi/api/getfiles?edi=$edi").decodeToString())
+                (0 until arr.length()).mapNotNull { i ->
+                    val n = arr.getJSONObject(i).optString("fileName").ifBlank { null } ?: return@mapNotNull null
+                    FileRef(n, "$LAIB/webapi/$edi/$n", if (idx == 0) "" else "${idx + 1}-")
+                }
             }
+        }.let { rs ->
+            rs.mapNotNull { it.getOrNull() }.flatten().ifEmpty { rs.firstNotNullOfOrNull { it.exceptionOrNull() }?.let { throw it } ?: emptyList() }
         }
         Chain.Carrefour -> {
             val html = get(CARREFOUR).decodeToString()
