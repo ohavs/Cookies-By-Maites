@@ -213,7 +213,7 @@ fun CSheet(open: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScop
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    Overlay { Box(Modifier.fillMaxSize()) {
         Box(
             Modifier.fillMaxSize().graphicsLayer { alpha = p.value.coerceIn(0f, 1f) }
                 .background(Color.Black.copy(alpha = 0.38f))
@@ -234,7 +234,7 @@ fun CSheet(open: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScop
             Spacer(Modifier.height(Space.l))
             content()
         }
-    }
+    } }
 }
 
 /**

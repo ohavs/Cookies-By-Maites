@@ -53,6 +53,7 @@ import com.maites.cookies.CookiesApp
 import com.maites.cookies.data.UiPrefs
 import com.maites.cookies.design.C
 import com.maites.cookies.design.CCard
+import com.maites.cookies.design.Overlay
 import com.maites.cookies.design.Radius
 import com.maites.cookies.design.Space
 import com.maites.cookies.design.Springs
@@ -138,7 +139,7 @@ fun AppShell(app: CookiesApp, prefs: UiPrefs) {
         CookbookSheet(app, cookbook, { cookbook = false }, showToast)
         ImportSheet(app, excel, { excel = false }, showToast)
 
-        Toast(toast, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 104.dp))
+        Overlay(top = true) { Box(Modifier.fillMaxSize()) { Toast(toast, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 104.dp)) } }
 
         AddSheet(open = addOpen, onDismiss = { addOpen = false }) { what ->
             addOpen = false

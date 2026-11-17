@@ -32,7 +32,7 @@ fun CookiesTheme(mode: ThemeMode, accent: Accent, content: @Composable () -> Uni
         LocalContentColor provides c.ink,
         LocalTextStyle provides TextStyles.body,
         LocalTextSelectionColors provides TextSelectionColors(c.accent, c.accentSoft),
-        content = content,
+        content = { OverlayHost(content) },
     )
 }
 

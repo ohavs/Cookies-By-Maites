@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.absolutePadding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -105,6 +108,8 @@ fun CCard(
 }
 
 /** Primary "sticker" button: accent fill, ink outline, hard offset shadow that collapses on press. */
+private val ButtonHeight = 50.dp
+
 @Composable
 fun StickerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val c = C.colors
@@ -115,13 +120,14 @@ fun StickerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     val shape = RoundedCornerShape(Radius.button)
     Box(
         modifier
-            .padding(bottom = 4.dp, end = 4.dp)
+            .absolutePadding(right = 4.dp, bottom = 4.dp)
             .drawBehind {
                 val d = drop.toPx()
                 drawRoundRect(c.stroke, topLeft = Offset(d, d), size = size, cornerRadius = CornerRadius(Radius.button.toPx()))
             }
-            .offset(x = 4.dp - drop, y = 4.dp - drop)
+            .absoluteOffset(x = 4.dp - drop, y = 4.dp - drop)
             .clip(shape)
+            .heightIn(min = ButtonHeight)
             .background(if (enabled) c.accent else c.surface3)
             .border(2.dp, c.stroke, shape)
             .clickable(interactionSource = src, indication = null, enabled = enabled) { haptics.light(); onClick() }
@@ -136,10 +142,13 @@ fun StickerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
 fun GhostButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val c = C.colors
     Box(
+        // Same footprint as StickerButton (face + 4dp shadow room) so the two line up side by side.
         modifier
+            .absolutePadding(right = 4.dp, bottom = 4.dp)
             .clip(RoundedCornerShape(Radius.button))
             .background(c.surface2)
             .pressable(onClick)
+            .heightIn(min = ButtonHeight)
             .padding(horizontal = 18.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) { Text(text, style = TextStyles.label, color = c.ink) }
