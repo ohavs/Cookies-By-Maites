@@ -318,6 +318,8 @@ def fetch_chain(chain, watched):
     stores = fill_cities(chain.stores())
     files = chain.price_files()
     print(f"[{chain.key}] {len(stores)} stores, {len(files)} price files", flush=True)
+    if not files:
+        raise RuntimeError("no price files published today")
     prices, names = {}, {}
 
     def one(u):
